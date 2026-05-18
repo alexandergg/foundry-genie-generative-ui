@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+apps/agent/.venv/
+apps/agent/.venv-foundry-genie/
+.venv/
+.venv-foundry-genie/
+
+# Build output
+.next/
+dist/
+build/
+coverage/
+apps/web/.next/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+apps/web/.env.local
+apps/agent/.env
+.uc3.env.local
+.foundry/agent-metadata.yaml
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

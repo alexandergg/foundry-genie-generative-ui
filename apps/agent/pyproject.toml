@@ -1,0 +1,17 @@
+[project]
+name = "uc3-generative-ui-agent"
+version = "0.1.0"
+description = "CopilotKit/AG-UI bridge for Azure AI Foundry + Databricks Genie UC3"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "fastapi>=0.115.5,<1.0.0",
+    "uvicorn[standard]>=0.29.0,<1.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "pyyaml>=6.0.0,<7.0.0",
+    "azure-ai-projects>=2.0.0b2",
+    "azure-identity>=1.17.0",
+    "langgraph>=1.0.0",
+    "langchain-core>=1.0.0",
+    "copilotkit>=0.1.78",
+    "ag-ui-langgraph>=0.0.35"
+]
