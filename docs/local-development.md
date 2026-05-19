@@ -48,6 +48,8 @@ Important web settings:
 | `AG_UI_AGENT_SCOPE` | Optional token scope override; defaults to `https://ai.azure.com/.default`. |
 | `LANGGRAPH_DEPLOYMENT_URL` | Backward-compatible fallback for the local AG-UI endpoint. |
 
+Observability settings are normally produced by the infra deployment. Keep the Application Insights connection string local-only; use `APPLICATIONINSIGHTS_RESOURCE_ID` in examples or metadata when you only need to identify the telemetry resource.
+
 ## Run locally
 
 Terminal 1:
@@ -99,3 +101,7 @@ Restart the local agent process to reset in-memory session state. The bridge als
 ### The UI renders text but no charts
 
 Ask for grouped/aggregated metrics and ensure the Foundry answer includes a markdown table with stable numeric columns. Example: “What is the total exposure by country in 2026-Q2?”
+
+### Traces are missing from Foundry or Application Insights
+
+Confirm the Foundry project has an `AppInsights` connection and that you generated fresh prompt-agent or hosted-agent traffic after the connection was created. In workspace-based Application Insights, hosted-agent invocations appear in `AppRequests`; prompt-agent and model calls commonly appear in `AppDependencies`. Ingestion can take a few minutes.

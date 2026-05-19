@@ -16,6 +16,7 @@ Browser
   → Microsoft Foundry Prompt Agent
   → Databricks Genie MCP endpoint
   → Databricks SQL Warehouse + Unity Catalog demo view
+  → Application Insights + Foundry Traces for prompt and hosted agent telemetry
 ```
 
 See [docs/architecture.md](docs/architecture.md) for details.
@@ -36,7 +37,7 @@ docs/                  # Step-by-step setup, local runbook, demo script, and ope
 ## Getting started
 
 1. **Deploy Azure and Databricks resources**
-   Follow [docs/azure-setup.md](docs/azure-setup.md) to deploy the new resource group, Microsoft Foundry project/model, Key Vault, monitoring, ACR, and permissions while reusing the existing UC3 Databricks Genie workspace by default.
+   Follow [docs/azure-setup.md](docs/azure-setup.md) to deploy the new resource group, Microsoft Foundry project/model, Key Vault, ACR, Application Insights tracing connections, and permissions while reusing the existing UC3 Databricks Genie workspace by default.
 
 2. **Run the AG-UI bridge and web app locally**
    Follow [docs/local-development.md](docs/local-development.md). The default local path uses FastAPI on port 8123; the same AG-UI/LangGraph runtime can also run as a Foundry Hosted Agent over the Invocations protocol.
@@ -88,5 +89,6 @@ See [docs/cost-control.md](docs/cost-control.md).
 - Microsoft Foundry MCP tools: <https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol>
 - Foundry hosted agents quickstart: <https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent>
 - Foundry hosted agent runtime components: <https://learn.microsoft.com/azure/ai-foundry/agents/concepts/runtime-components?view=foundry>
+- Foundry tracing with Application Insights: <https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup>
 - CopilotKit: <https://docs.copilotkit.ai/>
 - AG-UI protocol: <https://docs.ag-ui.com/>

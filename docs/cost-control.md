@@ -9,6 +9,7 @@ The main variable cost for this demo is Databricks compute, especially the SQL W
 - Configure aggressive auto-stop: 5 minutes for Serverless when possible, 10 minutes for Pro.
 - Do not leave interactive/all-purpose clusters running.
 - Delete the resource group if the demo will not continue.
+- Review Application Insights and Log Analytics retention/ingestion if you run frequent demos or trace-heavy tests.
 
 ## Stop and validate
 
@@ -24,7 +25,7 @@ Desired state:
 - Interactive/all-purpose clusters: `0` running.
 - Instance pools: `0` unless deliberately configured.
 
-With the warehouse stopped, Databricks SQL DBU cost should be near zero. Residual cost can remain for network, storage, logs, and managed workspace resources. For minimum cost, delete the resource group:
+With the warehouse stopped, Databricks SQL DBU cost should be near zero. Residual cost can remain for network, storage, Application Insights/Log Analytics ingestion and retention, and managed workspace resources. For minimum cost, delete the resource group:
 
 ```bash
 ./scripts/delete-resources.sh

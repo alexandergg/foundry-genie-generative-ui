@@ -8,8 +8,9 @@ Demonstrate that a user can ask governed business questions, approve access, rec
 
 1. Run `./scripts/validate-risk.sh`.
 2. Start the SQL Warehouse if needed.
-3. Start the local agent and web app.
+3. Start the local agent and web app, or point the web BFF at the Foundry Hosted Agent Invocations endpoint.
 4. Open <http://localhost:3000>.
+5. Confirm the Foundry project is connected to Application Insights if you want to show traces after the run.
 
 ## Script
 
@@ -78,3 +79,4 @@ Expected:
 - Foundry and Genie provide real data-backed answers.
 - Visual components are rendered as controlled React components.
 - Follow-up questions can use conversation/session context.
+- Prompt-agent and hosted-agent activity is visible in Foundry Traces or the connected Application Insights workspace after ingestion.

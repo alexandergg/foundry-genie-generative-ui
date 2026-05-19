@@ -102,6 +102,11 @@ print(created)
 PY
 
 mkdir -p "$DEMO_ROOT/.foundry"
+observability_yaml=""
+if [[ -n "${APPLICATIONINSIGHTS_RESOURCE_ID:-}" ]]; then
+  observability_yaml="    observability:
+      applicationInsightsResourceId: $APPLICATIONINSIGHTS_RESOURCE_ID"
+fi
 cat > "$DEMO_ROOT/.foundry/agent-metadata.yaml" <<YAML
 defaultEnvironment: dev
 environments:
@@ -109,6 +114,7 @@ environments:
     projectEndpoint: $FOUNDRY_PROJECT_ENDPOINT
     agentName: $FOUNDRY_GENIE_AGENT_NAME
     model: $FOUNDRY_MODEL_DEPLOYMENT
+$observability_yaml
     databricksGenieMcpEndpoint: $GENIE_MCP_ENDPOINT
     databricksGenieProjectConnectionName: $FOUNDRY_GENIE_CONNECTION_NAME
     databricksGenieSpaceId: $GENIE_SPACE_ID

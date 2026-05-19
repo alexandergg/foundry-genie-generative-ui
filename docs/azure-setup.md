@@ -22,6 +22,8 @@ The IaC assigns runtime RBAC for the managed identities it creates:
 | Foundry project system-assigned managed identity | Azure Container Registry | `Container Registry Repository Reader` |
 | Foundry project system-assigned managed identity | Key Vault | `Key Vault Secrets User` |
 
+Operators who query traces also need `Log Analytics Reader` or equivalent monitoring read access on the connected workspace/Application Insights resource.
+
 The Databricks grants for Genie cannot be expressed in Azure RBAC/Bicep. They are applied later by `scripts/grant-databricks-permissions.sh` to the **Foundry project managed identity** used by the `ProjectManagedIdentity` RemoteTool connection.
 
 Official references:
@@ -75,6 +77,7 @@ export DATABRICKS_HOST="https://<databricksWorkspaceUrl>"
 export FOUNDRY_PROJECT_ENDPOINT="<foundryProjectEndpoint>"
 export FOUNDRY_PROJECT_RESOURCE_ID="<foundryProjectResourceId>"
 export FOUNDRY_MODEL_DEPLOYMENT="<foundryModelDeploymentName>"
+export APPLICATIONINSIGHTS_RESOURCE_ID="<applicationInsightsResourceId>"
 export APPLICATIONINSIGHTS_CONNECTION_STRING="<applicationInsightsConnectionString>"
 export KEY_VAULT_URI="<keyVaultUri>"
 export AZURE_CONTAINER_REGISTRY_NAME="<containerRegistryName>"
@@ -128,7 +131,7 @@ The default Bicep deployment now creates the Microsoft Foundry AI Services accou
 
 If you disabled `deployFoundryModel` or need a different model for quota/capacity reasons, create or select that deployment in Foundry and set `FOUNDRY_MODEL_DEPLOYMENT` to its deployment name.
 
-The same Bicep deployment also creates `AppInsights` connections at the Foundry account and project scopes. This is required for the prompt Genie agent and the hosted AG-UI agent to show server-side traces in Foundry and to store telemetry in Application Insights.
+The same Bicep deployment also creates `AppInsights` connections at the Foundry account and project scopes. This is required for the prompt Genie agent and the hosted AG-UI agent to show server-side traces in Foundry and to store telemetry in Application Insights. The connection uses the Application Insights connection string as a deployment-time credential; keep `.risk.env.local` private and do not commit it. Microsoft currently documents prompt-agent tracing as generally available and hosted/custom agent tracing as preview.
 
 ## 7. Create the Foundry RemoteTool connection and agent
 
@@ -142,7 +145,7 @@ The script:
 1. Creates or updates a Foundry `RemoteTool` project connection targeting the Databricks Genie MCP endpoint.
 2. Uses `ProjectManagedIdentity` authentication with the Azure Databricks audience.
 3. Creates a Foundry prompt agent version with an MCP tool and the instructions from `scripts/foundry-genie-agent-instructions.txt`.
-4. Writes `.foundry/agent-metadata.yaml` for the local AG-UI bridge.
+4. Writes `.foundry/agent-metadata.yaml` for the local AG-UI bridge, including the Application Insights resource ID when `APPLICATIONINSIGHTS_RESOURCE_ID` is set.
 
 ## 8. Grant Databricks permissions to the Foundry project managed identity
 
@@ -203,7 +206,7 @@ export AG_UI_AGENT_AUTH="azure-identity"
 export AG_UI_AGENT_SCOPE="https://ai.azure.com/.default"
 ```
 
-Validate with a safe prompt first, then use the normal approval card before any governed Genie query. After validation, check Foundry Traces or Application Insights for both `risk-exposure-genie-agent` and `risk-exposure-ag-ui-hosted`. Keep Databricks compute stopped when the demo is idle.
+Validate with a safe prompt first, then use the normal approval card before any governed Genie query. After validation, check Foundry Traces or Application Insights for both `risk-exposure-genie-agent` and `risk-exposure-ag-ui-hosted`. Useful workspace-based Application Insights tables are `AppRequests`, `AppDependencies`, `AppTraces`, and `AppGenAIContent`. Keep Databricks compute stopped when the demo is idle.
 
 ## 11. Stop compute after setup or demo
 
