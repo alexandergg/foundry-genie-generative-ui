@@ -1,12 +1,26 @@
+---
+name: repo-validation
+description: Guidance for selecting and reporting repository validation commands. Use when preparing changes for review, checking quality, deciding which tests to run, or summarizing validation results.
+---
+
 # Repo validation
 
 Use this skill when preparing or reviewing changes.
 
-1. Identify touched surfaces: Python agent, frontend, scripts/docs, infra, or data SQL.
-2. Run the narrow validation first:
-   - Python: `npm run validate:agent`
+## Validation process
+
+1. Identify touched surfaces: Python agent, frontend, scripts/docs, infrastructure, or Databricks SQL.
+2. Run the narrowest relevant validation first:
+   - Python agent: `npm run validate:agent`
    - Frontend: `npm run validate:web`
-   - Full repo: `npm run validate`
+   - Full repository: `npm run validate`
    - Docs/scripts only: `git diff --check`
-3. Do not run live Azure/Databricks/Foundry commands unless the user explicitly asks.
-4. Report exact commands run and any blocked checks.
+3. Do not run live Azure, Databricks, or Foundry commands unless the user explicitly asks and required credentials are available.
+4. If a validation command fails, inspect the failure before deciding whether code changes are needed.
+5. Report exact commands run, results, and any blocked checks.
+
+## Best practices
+
+- Prefer existing package scripts and repository tooling over adding new validation tools.
+- Keep validation output concise; include detailed failure context only when it helps the user act.
+- Do not treat unrelated pre-existing failures as fixed unless you changed and verified them.
