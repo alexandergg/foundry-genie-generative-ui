@@ -1,11 +1,11 @@
--- UC3 Databricks Genie demo data setup.
+-- Risk Exposure Databricks Genie demo data setup.
 -- Run in Databricks SQL after selecting a Pro or Serverless SQL warehouse.
 -- Adjust catalog/schema names if your workspace policy requires a different catalog.
 
-CREATE CATALOG IF NOT EXISTS uc3_risk_demo COMMENT 'UC3 catalog for the Risk & Exposure Genie demo';
-CREATE SCHEMA IF NOT EXISTS uc3_risk_demo.analytics COMMENT 'Curated analytical schema for the Genie UC3 demo';
+CREATE CATALOG IF NOT EXISTS risk_demo COMMENT 'Risk Exposure catalog for the Risk & Exposure Genie demo';
+CREATE SCHEMA IF NOT EXISTS risk_demo.analytics COMMENT 'Curated analytical schema for the Genie Risk Exposure demo';
 
-USE CATALOG uc3_risk_demo;
+USE CATALOG risk_demo;
 USE SCHEMA analytics;
 
 CREATE OR REPLACE TABLE dim_broker (
@@ -15,7 +15,7 @@ CREATE OR REPLACE TABLE dim_broker (
   broker_country STRING COMMENT 'Primary broker country'
 )
 USING DELTA
-COMMENT 'Curated broker dimension for UC3 Genie demo';
+COMMENT 'Curated broker dimension for Risk Exposure Genie demo';
 
 INSERT OVERWRITE dim_broker VALUES
   ('B001', 'North Trade Brokers', 'Enterprise', 'Netherlands'),
@@ -41,7 +41,7 @@ CREATE OR REPLACE TABLE fact_exposure (
   overdue_balance_eur DECIMAL(18,2) COMMENT 'Overdue outstanding balance in EUR'
 )
 USING DELTA
-COMMENT 'Curated exposure fact table for UC3 Genie demo';
+COMMENT 'Curated exposure fact table for Risk Exposure Genie demo';
 
 INSERT OVERWRITE fact_exposure VALUES
   ('P1001', 'B001', 'Contoso NL', 'Netherlands', 'A', 'Trade Credit', '2026-Q1', 1250000.00, 25000.00),
@@ -73,7 +73,7 @@ CREATE OR REPLACE TABLE fact_claim (
   claim_month STRING COMMENT 'Claim month in YYYY-MM format'
 )
 USING DELTA
-COMMENT 'Curated claims fact table for UC3 Genie demo';
+COMMENT 'Curated claims fact table for Risk Exposure Genie demo';
 
 INSERT OVERWRITE fact_claim VALUES
   ('C9001', 'P1002', 'Open', 18000.00, '2026-01'),
@@ -88,7 +88,7 @@ INSERT OVERWRITE fact_claim VALUES
   ('C9010', 'P1019', 'Open', 41000.00, '2026-08'),
   ('C9011', 'P1020', 'Closed', 19000.00, '2026-09');
 
-CREATE OR REPLACE VIEW vw_uc3_genie_exposure_claims
+CREATE OR REPLACE VIEW vw_risk_genie_exposure_claims
 COMMENT 'Genie-ready curated view joining exposure, broker and claim signals for business questions'
 AS
 SELECT
@@ -110,4 +110,4 @@ LEFT JOIN fact_claim c ON e.policy_id = c.policy_id
 GROUP BY ALL;
 
 -- Useful checks for the demo:
-SELECT * FROM vw_uc3_genie_exposure_claims ORDER BY fiscal_quarter, country;
+SELECT * FROM vw_risk_genie_exposure_claims ORDER BY fiscal_quarter, country;

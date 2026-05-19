@@ -6,7 +6,7 @@ Demonstrate that a user can ask governed business questions, approve access, rec
 
 ## Before the session
 
-1. Run `./scripts/90-validate-uc3.sh`.
+1. Run `./scripts/validate-risk.sh`.
 2. Start the SQL Warehouse if needed.
 3. Start the local agent and web app.
 4. Open <http://localhost:3000>.

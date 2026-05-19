@@ -26,7 +26,7 @@ apps/
   web/                 # Next.js + CopilotKit + controlled Generative UI components
   agent/               # FastAPI AG-UI bridge that invokes Microsoft Foundry
 infra/                 # Azure Bicep for Databricks, ADLS Gen2, and monitoring
-databricks/sql/        # Synthetic UC3 demo dataset and business-facing view
+databricks/sql/        # Synthetic Risk Exposure demo dataset and business-facing view
 scripts/               # Azure, Databricks, Genie, Foundry, validation, and cost-control scripts
 docs/                  # Step-by-step setup, local runbook, demo script, and operations notes
 .foundry/              # Local Foundry metadata template; real metadata is gitignored
@@ -34,13 +34,13 @@ docs/                  # Step-by-step setup, local runbook, demo script, and ope
 
 ## Getting started
 
-1. **Deploy Azure and Databricks resources**  
+1. **Deploy Azure and Databricks resources**
    Follow [docs/azure-setup.md](docs/azure-setup.md) to deploy the resource group, Databricks workspace, SQL Warehouse, demo data, Genie Space, Microsoft Foundry agent, and permissions.
 
-2. **Run the AG-UI bridge and web app locally**  
+2. **Run the AG-UI bridge and web app locally**
    Follow [docs/local-development.md](docs/local-development.md).
 
-3. **Run the live demo**  
+3. **Run the live demo**
    Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates conversational memory and rich visual components.
 
 ## Quick local run
@@ -66,16 +66,16 @@ Open <http://localhost:3000>.
 npm run validate
 ```
 
-This compiles the Python bridge and runs the frontend lint/build pipeline.
+This runs Python Ruff formatting/lint checks, mypy, pytest, Python compilation, and the frontend lint/build pipeline. See [CONTRIBUTING.md](CONTRIBUTING.md) for pre-commit setup.
 
 ## Cost control
 
 The demo is intentionally live: there is no mock runtime. Databricks SQL Warehouse usage can incur cost. Stop compute after each session:
 
 ```bash
-source .uc3.env.local
-./scripts/95-stop-compute.sh
-./scripts/90-validate-uc3.sh
+source .risk.env.local
+./scripts/stop-compute.sh
+./scripts/validate-risk.sh
 ```
 
 See [docs/cost-control.md](docs/cost-control.md).

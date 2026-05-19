@@ -4,7 +4,7 @@ targetScope = 'resourceGroup'
 param location string = resourceGroup().location
 
 @description('Short workload name used in resource names.')
-param workloadName string = 'uc3genie'
+param workloadName string = 'riskgenie'
 
 @description('Environment name used in tags and names.')
 param environmentName string = 'demo'
@@ -55,7 +55,7 @@ module analytics './modules/databricks.bicep' = {
 }
 
 module storage './modules/storage.bicep' = {
-  name: 'uc3-storage'
+  name: 'risk-storage'
   params: {
     location: location
     storageAccountName: storageAccountName
@@ -64,7 +64,7 @@ module storage './modules/storage.bicep' = {
 }
 
 module monitoring './modules/monitoring.bicep' = {
-  name: 'uc3-monitoring'
+  name: 'risk-monitoring'
   params: {
     location: location
     workspaceName: logAnalyticsName

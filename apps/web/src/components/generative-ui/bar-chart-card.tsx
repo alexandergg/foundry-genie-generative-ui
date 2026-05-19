@@ -16,9 +16,9 @@ export function BarChartCard({ title, data, xKey, yKey, valueFormat = "number" }
             <XAxis dataKey={xKey} angle={-25} textAnchor="end" interval={0} height={70} tick={{ fontSize: 12 }} />
             <YAxis tickFormatter={(value) => formatValue(Number(value), valueFormat)} tick={{ fontSize: 12 }} />
             <Tooltip formatter={(value) => formatValue(Number(value), valueFormat)} />
-            <Bar dataKey={yKey} fill="url(#uc3Gradient)" radius={[8, 8, 0, 0]} />
+            <Bar dataKey={yKey} fill="url(#riskGradient)" radius={[8, 8, 0, 0]} />
             <defs>
-              <linearGradient id="uc3Gradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="riskGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#2563eb" />
                 <stop offset="100%" stopColor="#06b6d4" />
               </linearGradient>

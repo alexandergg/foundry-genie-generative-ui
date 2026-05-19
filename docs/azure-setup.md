@@ -19,9 +19,9 @@ Official references:
 ## 1. Configure local deployment variables
 
 ```bash
-cp scripts/uc3.env.example .uc3.env.local
-$EDITOR .uc3.env.local
-source .uc3.env.local
+cp scripts/risk.env.example .risk.env.local
+$EDITOR .risk.env.local
+source .risk.env.local
 ```
 
 Minimum values before infrastructure deployment:
@@ -46,7 +46,7 @@ The Bicep deployment creates:
 
 It intentionally does not create Databricks data-plane objects such as SQL Warehouses or Genie Spaces.
 
-After deployment, update `.uc3.env.local` with:
+After deployment, update `.risk.env.local` with:
 
 ```bash
 export DATABRICKS_WORKSPACE_NAME="<workspace-name>"
@@ -56,11 +56,11 @@ export DATABRICKS_HOST="https://<workspace-host>"
 ## 3. Create or reuse a Databricks SQL Warehouse
 
 ```bash
-source .uc3.env.local
-./scripts/10-create-warehouse.sh
+source .risk.env.local
+./scripts/create-warehouse.sh
 ```
 
-Copy the printed `WAREHOUSE_ID` into `.uc3.env.local`.
+Copy the printed `WAREHOUSE_ID` into `.risk.env.local`.
 
 Recommended demo settings:
 
@@ -69,28 +69,28 @@ Recommended demo settings:
 - Min/max clusters: `1/1`.
 - Auto-stop: `5-10` minutes.
 
-## 4. Load the synthetic UC3 dataset
+## 4. Load the synthetic Risk Exposure dataset
 
 This step can start the SQL Warehouse.
 
 ```bash
-source .uc3.env.local
-ALLOW_WAREHOUSE_START=yes ./scripts/20-run-demo-sql.sh
+source .risk.env.local
+ALLOW_WAREHOUSE_START=yes ./scripts/run-demo-sql.sh
 ```
 
 The script creates demo tables and the business-facing view:
 
 ```text
-${UC3_CATALOG}.${UC3_SCHEMA}.vw_uc3_genie_exposure_claims
+${DEMO_CATALOG}.${DEMO_SCHEMA}.vw_risk_genie_exposure_claims
 ```
 
 ## 5. Create the Databricks Genie Space
 
 ```bash
-./scripts/30-create-genie-space.sh
+./scripts/create-genie-space.sh
 ```
 
-Copy the printed `GENIE_SPACE_ID` into `.uc3.env.local`.
+Copy the printed `GENIE_SPACE_ID` into `.risk.env.local`.
 
 Then open the Genie Space in Databricks and add the guidance from [docs/genie-space-config.md](genie-space-config.md). Genie requires Unity Catalog data, SQL entitlement, warehouse access, and appropriate ACLs.
 
@@ -104,13 +104,13 @@ export FOUNDRY_PROJECT_RESOURCE_ID="/subscriptions/<sub>/resourceGroups/<rg>/pro
 export FOUNDRY_MODEL_DEPLOYMENT="gpt-4.1-mini"
 ```
 
-Add these values to `.uc3.env.local`.
+Add these values to `.risk.env.local`.
 
 ## 7. Create the Foundry RemoteTool connection and agent
 
 ```bash
-source .uc3.env.local
-./scripts/60-setup-foundry-genie-agent.sh
+source .risk.env.local
+./scripts/setup-foundry-genie-agent.sh
 ```
 
 The script:
@@ -123,7 +123,7 @@ The script:
 ## 8. Grant Databricks permissions to the Foundry project managed identity
 
 ```bash
-./scripts/50-grant-databricks-permissions.sh
+./scripts/grant-databricks-permissions.sh
 ```
 
 The script grants the Foundry project managed identity:
@@ -131,12 +131,12 @@ The script grants the Foundry project managed identity:
 - Databricks SQL entitlement.
 - SQL Warehouse `CAN_USE`.
 - Genie Space `CAN_RUN`.
-- Unity Catalog `USE_CATALOG`, `USE_SCHEMA`, and `SELECT` on the UC3 objects.
+- Unity Catalog `USE_CATALOG`, `USE_SCHEMA`, and `SELECT` on the Risk Exposure objects.
 
 ## 9. Validate cloud setup without querying data
 
 ```bash
-./scripts/90-validate-uc3.sh
+./scripts/validate-risk.sh
 ```
 
 This checks Databricks warehouse metadata, Genie Space metadata, and Foundry connection metadata. It does not invoke Genie.
@@ -144,6 +144,6 @@ This checks Databricks warehouse metadata, Genie Space metadata, and Foundry con
 ## 10. Stop compute after setup or demo
 
 ```bash
-./scripts/95-stop-compute.sh
-./scripts/90-validate-uc3.sh
+./scripts/stop-compute.sh
+./scripts/validate-risk.sh
 ```

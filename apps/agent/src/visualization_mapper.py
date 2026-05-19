@@ -17,10 +17,7 @@ def _parse_number(value: str) -> float | None:
         return None
 
     if "," in cleaned and "." in cleaned:
-        if cleaned.rfind(",") > cleaned.rfind("."):
-            cleaned = cleaned.replace(".", "").replace(",", ".")
-        else:
-            cleaned = cleaned.replace(",", "")
+        cleaned = cleaned.replace(".", "").replace(",", ".") if cleaned.rfind(",") > cleaned.rfind(".") else cleaned.replace(",", "")
     elif cleaned.count(".") > 1:
         cleaned = cleaned.replace(".", "")
     elif cleaned.count(",") > 1:
@@ -57,7 +54,7 @@ def extract_markdown_table(text: str) -> tuple[list[str], list[dict[str, Any]]]:
         if len(cells) != len(header):
             continue
         row: dict[str, Any] = {}
-        for key, raw in zip(header, cells):
+        for key, raw in zip(header, cells, strict=True):
             number = _parse_number(raw)
             row[key] = number if number is not None else raw
         rows.append(row)
@@ -170,7 +167,11 @@ def build_component_calls(question: str, answer: str, warehouse_name: str | None
     ]
 
     lowered_answer = answer.lower()
-    if warehouse_name and "warehouse" in lowered_answer and ("parado" in lowered_answer or "stopped" in lowered_answer or "en proceso" in lowered_answer):
+    if (
+        warehouse_name
+        and "warehouse" in lowered_answer
+        and ("parado" in lowered_answer or "stopped" in lowered_answer or "en proceso" in lowered_answer)
+    ):
         status = "query-pending" if "en proceso" in lowered_answer else "needs-start"
         calls.append(ComponentCall("warehouseStatusCard", {"warehouseName": warehouse_name, "status": status}))
 
@@ -210,7 +211,9 @@ def build_component_calls(question: str, answer: str, warehouse_name: str | None
                     },
                 )
             )
-        if _is_time_like_key(label_key, rows) or any(token in question.lower() for token in ["trend", "variation", "compare", "2026-q1", "2026-q2"]):
+        if _is_time_like_key(label_key, rows) or any(
+            token in question.lower() for token in ["trend", "variation", "compare", "2026-q1", "2026-q2"]
+        ):
             calls.append(
                 ComponentCall(
                     "lineAreaChartCard",

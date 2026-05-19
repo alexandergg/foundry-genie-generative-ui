@@ -2,12 +2,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-UC3_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+DEMO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 load_local_env() {
-  if [[ -f "$UC3_ROOT/.uc3.env.local" ]]; then
+  if [[ -f "$DEMO_ROOT/.risk.env.local" ]]; then
     # shellcheck disable=SC1091
-    source "$UC3_ROOT/.uc3.env.local"
+    source "$DEMO_ROOT/.risk.env.local"
   fi
 }
 

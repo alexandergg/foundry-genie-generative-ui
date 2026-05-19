@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 from dotenv import load_dotenv
@@ -23,11 +24,12 @@ class Settings:
     transient_response_retries: int
 
 
-def _load_metadata() -> dict:
+def _load_metadata() -> dict[str, Any]:
     if not METADATA_PATH.exists():
         return {}
     with METADATA_PATH.open("r", encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
+        loaded = yaml.safe_load(fh) or {}
+    return cast(dict[str, Any], loaded)
 
 
 def _env_bool(name: str, default: bool) -> bool:

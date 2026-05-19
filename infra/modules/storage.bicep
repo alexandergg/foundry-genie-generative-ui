@@ -16,7 +16,7 @@ resource account 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   kind: 'StorageV2'
   tags: union(tags, {
     component: 'storage'
-    uc3Role: 'landing-and-uc-storage'
+    riskRole: 'landing-and-uc-storage'
   })
   properties: {
     accessTier: 'Hot'

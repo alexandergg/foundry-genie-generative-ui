@@ -4,6 +4,7 @@ import asyncio
 import os
 import uuid
 import warnings
+from contextlib import suppress
 from typing import Annotated, Any, TypedDict
 
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint
@@ -63,7 +64,7 @@ def _approval_request(question: str) -> list[AnyMessage]:
                     "args": {
                         "requestId": request_id,
                         "question": question,
-                        "dataSource": "Databricks Genie Space UC3 through Azure AI Foundry MCP",
+                        "dataSource": "Databricks Genie Space Risk Exposure through Azure AI Foundry MCP",
                         "purpose": "Send the question to the Foundry agent to query exposure, claims, brokers or overdue balances.",
                         "approvalCommand": f"{APPROVAL_COMMAND_PREFIX} {request_id}",
                     },
@@ -75,16 +76,14 @@ def _approval_request(question: str) -> list[AnyMessage]:
 
 
 async def _emit_progress(message: str) -> None:
-    try:
+    with suppress(RuntimeError):
         await adispatch_custom_event(
             "manually_emit_message",
             {"message_id": f"progress-{uuid.uuid4().hex[:8]}", "message": message},
         )
-    except RuntimeError:
-        pass
 
 
-async def run_uc3(state: AgentState) -> dict[str, Any]:
+async def run_risk(state: AgentState) -> dict[str, Any]:
     question = _last_user_message(state.get("messages", []))
     if not question:
         return {"messages": [AIMessage(content="What would you like to analyze about exposure, claims, brokers or overdue balances?")]}
@@ -93,18 +92,22 @@ async def run_uc3(state: AgentState) -> dict[str, Any]:
     if approval_token:
         approved_question = pending_data_approvals.pop(approval_token, None)
         if not approved_question:
-            return {"messages": [AIMessage(content="I cannot find that approval request. Run the query again to generate a valid authorization.")]}
+            return {
+                "messages": [
+                    AIMessage(content="I cannot find that approval request. Run the query again to generate a valid authorization.")
+                ]
+            }
         question = approved_question
     else:
         cached = cached_context_answer(question, state.get("session_context"), settings.databricks_sql_warehouse_name)
         if cached:
             cached_answer, cached_calls = cached
-            messages: list[AnyMessage] = [AIMessage(content=cached_answer)]
+            cached_messages: list[AnyMessage] = [AIMessage(content=cached_answer)]
             for call in cached_calls:
                 tool_call_id = f"{call.name}-{uuid.uuid4().hex[:8]}"
-                messages.append(AIMessage(content="", tool_calls=[{"id": tool_call_id, "name": call.name, "args": call.args}]))
-                messages.append(ToolMessage(content="rendered_from_session_cache", tool_call_id=tool_call_id))
-            return {"messages": messages, "session_context": state.get("session_context")}
+                cached_messages.append(AIMessage(content="", tool_calls=[{"id": tool_call_id, "name": call.name, "args": call.args}]))
+                cached_messages.append(ToolMessage(content="rendered_from_session_cache", tool_call_id=tool_call_id))
+            return {"messages": cached_messages, "session_context": state.get("session_context")}
         if settings.require_human_data_approval:
             return {"messages": _approval_request(question), "session_context": state.get("session_context")}
 
@@ -154,12 +157,12 @@ async def run_uc3(state: AgentState) -> dict[str, Any]:
 
 
 graph_builder = StateGraph(AgentState)
-graph_builder.add_node("run_uc3", run_uc3)
-graph_builder.add_edge(START, "run_uc3")
-graph_builder.add_edge("run_uc3", END)
+graph_builder.add_node("run_risk", run_risk)
+graph_builder.add_edge(START, "run_risk")
+graph_builder.add_edge("run_risk", END)
 agent_graph = graph_builder.compile(checkpointer=InMemorySaver())
 
-app = FastAPI(title="UC3 Generative UI Agent")
+app = FastAPI(title="Risk Exposure Generative UI Agent")
 
 
 @app.get("/health")
@@ -176,7 +179,7 @@ add_langgraph_fastapi_endpoint(
     app=app,
     agent=LangGraphAGUIAgent(
         name="default",
-        description="UC3 Foundry/Genie Generative UI agent",
+        description="Risk Exposure Foundry/Genie Generative UI agent",
         graph=agent_graph,
     ),
     path="/",

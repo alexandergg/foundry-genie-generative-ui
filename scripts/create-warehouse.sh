@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 load_local_env
 
-export WAREHOUSE_NAME="${WAREHOUSE_NAME:-UC3 Genie Demo 2X-Small}"
+export WAREHOUSE_NAME="${WAREHOUSE_NAME:-Risk Exposure Genie Demo 2X-Small}"
 export WAREHOUSE_SIZE="${WAREHOUSE_SIZE:-2X-Small}"
 export WAREHOUSE_AUTO_STOP_MINUTES="${WAREHOUSE_AUTO_STOP_MINUTES:-10}"
 

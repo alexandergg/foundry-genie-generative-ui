@@ -8,9 +8,9 @@ load_local_env
 require_env FOUNDRY_PROJECT_RESOURCE_ID
 require_env WAREHOUSE_ID
 require_env GENIE_SPACE_ID
-require_env UC3_CATALOG
-UC3_SCHEMA="${UC3_SCHEMA:-default}"
-UC3_VIEW_NAME="${UC3_VIEW_NAME:-vw_uc3_genie_exposure_claims}"
+require_env DEMO_CATALOG
+DEMO_SCHEMA="${DEMO_SCHEMA:-default}"
+DEMO_VIEW_NAME="${DEMO_VIEW_NAME:-vw_risk_genie_exposure_claims}"
 
 principal_id="$(az resource show --ids "$FOUNDRY_PROJECT_RESOURCE_ID" --api-version 2025-06-01 --query identity.principalId -o tsv)"
 if [[ -z "$principal_id" || "$principal_id" == "null" ]]; then
@@ -18,7 +18,7 @@ if [[ -z "$principal_id" || "$principal_id" == "null" ]]; then
   exit 4
 fi
 foundry_app_id="$(az ad sp show --id "$principal_id" --query appId -o tsv)"
-sp_name="foundry-project-mi-uc3-genie"
+sp_name="foundry-project-mi-risk-genie"
 
 existing="$(databricks_api GET "/api/2.0/preview/scim/v2/ServicePrincipals?filter=applicationId%20eq%20%22$foundry_app_id%22" | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("Resources") or [{}])[0].get("id", ""))')"
 if [[ -z "$existing" ]]; then
@@ -94,8 +94,8 @@ fi
 
 grant_object_permission "warehouses/$WAREHOUSE_ID" CAN_USE
 grant_object_permission "genie/$GENIE_SPACE_ID" CAN_RUN
-grant_uc_permission catalog "$UC3_CATALOG" USE_CATALOG
-grant_uc_permission schema "$UC3_CATALOG.$UC3_SCHEMA" USE_SCHEMA
-for table_name in dim_broker fact_claim fact_exposure "$UC3_VIEW_NAME"; do
-  grant_uc_permission table "$UC3_CATALOG.$UC3_SCHEMA.$table_name" SELECT
+grant_uc_permission catalog "$DEMO_CATALOG" USE_CATALOG
+grant_uc_permission schema "$DEMO_CATALOG.$DEMO_SCHEMA" USE_SCHEMA
+for table_name in dim_broker fact_claim fact_exposure "$DEMO_VIEW_NAME"; do
+  grant_uc_permission table "$DEMO_CATALOG.$DEMO_SCHEMA.$table_name" SELECT
 done

@@ -24,7 +24,7 @@ resource workspace 'Microsoft.Databricks/workspaces@2026-01-01' = {
   }
   tags: union(tags, {
     component: 'databricks'
-    uc3Role: 'genie-workspace'
+    riskRole: 'genie-workspace'
   })
   properties: {
     computeMode: 'Hybrid'

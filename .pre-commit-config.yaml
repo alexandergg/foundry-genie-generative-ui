@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-json
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: ^package-lock\.json$
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.7
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^apps/agent/.*\.py$
+      - id: ruff-format
+        files: ^apps/agent/.*\.py$
+  - repo: local
+    hooks:
+      - id: agent-tests
+        name: agent unit tests
+        entry: scripts/validate-agent.sh --quick
+        language: system
+        pass_filenames: false
+        files: ^apps/agent/.*\.py$

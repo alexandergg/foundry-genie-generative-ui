@@ -13,14 +13,14 @@ The main variable cost for this demo is Databricks compute, especially the SQL W
 ## Stop and validate
 
 ```bash
-source .uc3.env.local
-./scripts/95-stop-compute.sh
-./scripts/90-validate-uc3.sh
+source .risk.env.local
+./scripts/stop-compute.sh
+./scripts/validate-risk.sh
 ```
 
 Desired state:
 
-- UC3 SQL Warehouse: `STOPPED`.
+- Risk Exposure SQL Warehouse: `STOPPED`.
 - Interactive/all-purpose clusters: `0` running.
 - Instance pools: `0` unless deliberately configured.
 

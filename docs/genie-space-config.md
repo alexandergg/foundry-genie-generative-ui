@@ -12,9 +12,9 @@ Use this after Azure infrastructure is deployed and Unity Catalog is available.
 
 ## Genie Space scope
 
-Create one Genie Space for the curated UC3 data scope:
+Create one Genie Space for the curated Risk Exposure data scope:
 
-- Preferred object: `${UC3_CATALOG}.${UC3_SCHEMA}.vw_uc3_genie_exposure_claims`
+- Preferred object: `${DEMO_CATALOG}.${DEMO_SCHEMA}.vw_risk_genie_exposure_claims`
 - Optional supporting objects:
   - `fact_exposure`
   - `fact_claim`
@@ -29,7 +29,7 @@ Suggested description:
 Add guidance similar to:
 
 ```text
-Use vw_uc3_genie_exposure_claims as the preferred business-facing object.
+Use vw_risk_genie_exposure_claims as the preferred business-facing object.
 Treat total_exposure_eur, total_overdue_balance_eur and total_claim_amount_eur as EUR amounts.
 Use fiscal_quarter for quarter comparisons.
 Use risk_class A/B/C where A is lower risk and C is higher risk for this synthetic demo.
@@ -43,4 +43,4 @@ Do not infer PII; this demo dataset is synthetic and aggregated.
 - Partner-powered AI / Genie features are enabled according to workspace policy.
 - The setup user has Databricks SQL entitlement, `CAN USE` on the warehouse, and `SELECT` on the UC objects.
 - Demo users have `CAN VIEW` / `CAN RUN` on the Genie Space and `SELECT` on the data.
-- The Foundry project managed identity has `CAN_RUN` on Genie, `CAN_USE` on the warehouse, Databricks SQL entitlement, and `SELECT` on the UC3 view/supporting tables.
+- The Foundry project managed identity has `CAN_RUN` on Genie, `CAN_USE` on the warehouse, Databricks SQL entitlement, and `SELECT` on the Risk Exposure view/supporting tables.

@@ -10,7 +10,7 @@ export function WarehouseStatusCard({ warehouseName, status }: WarehouseStatusCa
       <p className="viz-muted">
         {pending
           ? "Genie indicates that the query is still running. Retry in a few seconds if the warehouse is already active."
-          : "Start it from Databricks or with the UC3 scripts before running the query again."}
+          : "Start it from Databricks or with the Risk Exposure scripts before running the query again."}
       </p>
     </div>
   );

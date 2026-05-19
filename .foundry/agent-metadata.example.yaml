@@ -5,7 +5,7 @@ environments:
     agentName: risk-exposure-genie-agent
     model: gpt-4.1-mini
     databricksGenieMcpEndpoint: https://<databricks-host>/api/2.0/mcp/genie/<genie-space-id>
-    databricksGenieProjectConnectionName: databricks-genie-uc3-mcp
+    databricksGenieProjectConnectionName: databricks-genie-risk-mcp
     databricksGenieSpaceId: <genie-space-id>
-    databricksSqlWarehouseName: UC3 Genie Demo 2X-Small
+    databricksSqlWarehouseName: Risk Exposure Genie Demo 2X-Small
     evaluationSuites: []

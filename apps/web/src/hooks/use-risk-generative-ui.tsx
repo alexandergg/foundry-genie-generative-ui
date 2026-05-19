@@ -18,34 +18,34 @@ import { FollowUpQuestions } from "@/components/generative-ui/follow-up-question
 import { McpApprovalCard } from "@/components/generative-ui/mcp-approval-card";
 import { DashboardPlanBridge, DashboardToolStatusBridge, DashboardVisualBridge } from "@/components/generative-ui/dashboard-stage";
 
-export function useUc3GenerativeUI() {
+export function useRiskGenerativeUI() {
   useComponent({
     name: "kpiStrip",
-    description: "Executive KPI strip for UC3 metrics.",
+    description: "Executive KPI strip for Risk Exposure metrics.",
     parameters: KpiStripProps,
     render: (props) => <DashboardVisualBridge visual={{ id: "kpi-strip", type: "kpiStrip", props }} />,
   });
   useComponent({
     name: "barChartCard",
-    description: "Bar chart for ranked UC3 analytics results.",
+    description: "Bar chart for ranked Risk Exposure analytics results.",
     parameters: BarChartCardProps,
     render: (props) => <DashboardVisualBridge visual={{ id: `bar-${props.title}`, type: "barChartCard", props }} />,
   });
   useComponent({
     name: "lineAreaChartCard",
-    description: "Line and area trend chart for temporal UC3 analytics.",
+    description: "Line and area trend chart for temporal Risk Exposure analytics.",
     parameters: LineAreaChartCardProps,
     render: (props) => <DashboardVisualBridge visual={{ id: `line-area-${props.title}`, type: "lineAreaChartCard", props }} />,
   });
   useComponent({
     name: "donutChartCard",
-    description: "Donut chart for metric share across UC3 segments.",
+    description: "Donut chart for metric share across Risk Exposure segments.",
     parameters: DonutChartCardProps,
     render: (props) => <DashboardVisualBridge visual={{ id: `donut-${props.title}`, type: "donutChartCard", props }} />,
   });
   useComponent({
     name: "metricComparisonChartCard",
-    description: "Grouped bar chart comparing multiple UC3 metrics.",
+    description: "Grouped bar chart comparing multiple Risk Exposure metrics.",
     parameters: MetricComparisonChartCardProps,
     render: (props) => <DashboardVisualBridge visual={{ id: `metric-comparison-${props.title}`, type: "metricComparisonChartCard", props }} />,
   });
@@ -68,7 +68,7 @@ export function useUc3GenerativeUI() {
     render: (props) => <DashboardVisualBridge visual={{ id: "warehouse-status", type: "warehouseStatusCard", props }} />,
   });
   useComponent({ name: "mcpApprovalCard", description: "Human approval gate before querying governed Genie data.", parameters: McpApprovalCardProps, render: McpApprovalCard });
-  useComponent({ name: "followUpQuestions", description: "Suggested follow-up questions for UC3 drill-down analysis.", parameters: FollowUpQuestionsProps, render: FollowUpQuestions });
+  useComponent({ name: "followUpQuestions", description: "Suggested follow-up questions for Risk Exposure drill-down analysis.", parameters: FollowUpQuestionsProps, render: FollowUpQuestions });
 
   useRenderTool({
     name: "plan_visualization",

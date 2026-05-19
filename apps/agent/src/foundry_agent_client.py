@@ -55,7 +55,11 @@ class FoundryAgentClient:
         if fragments:
             return "\n".join(fragments)
 
-        pending_approvals = [getattr(item, "name", "MCP tool") for item in getattr(response, "output", []) or [] if getattr(item, "type", None) == "mcp_approval_request"]
+        pending_approvals = [
+            getattr(item, "name", "MCP tool")
+            for item in getattr(response, "output", []) or []
+            if getattr(item, "type", None) == "mcp_approval_request"
+        ]
         if pending_approvals:
             return "The query requires MCP approval for: " + ", ".join(pending_approvals)
 
@@ -80,14 +84,22 @@ class FoundryAgentClient:
                 if getattr(item, "type", None) == "mcp_approval_request"
             ]
             raise RuntimeError(
-                "Foundry/Genie kept requesting MCP approvals after "
-                f"{self.settings.mcp_approval_rounds} rounds: {', '.join(pending_names)}"
+                f"Foundry/Genie kept requesting MCP approvals after {self.settings.mcp_approval_rounds} rounds: {', '.join(pending_names)}"
             )
         return response
 
     def _looks_transient(self, answer: str) -> bool:
         lowered = answer.lower()
-        transient_markers = ["in progress", "still running", "continues running", "en proceso", "está en proceso", "continúa en ejecución", "sigue ejecut", "puede deberse"]
+        transient_markers = [
+            "in progress",
+            "still running",
+            "continues running",
+            "en proceso",
+            "está en proceso",
+            "continúa en ejecución",
+            "sigue ejecut",
+            "puede deberse",
+        ]
         warehouse_markers = ["warehouse", "sql warehouse", "stopped", "start", "warming", "parado", "arrancado"]
         return any(marker in lowered for marker in transient_markers) and any(marker in lowered for marker in warehouse_markers)
 
@@ -105,7 +117,7 @@ class FoundryAgentClient:
         return (
             f"{context_instruction}"
             "If you do call Databricks Genie, start a new Genie query/conversation; do not reuse Databricks Genie conversation_id values or IDs such as 1. "
-            "Prefer the vw_uc3_genie_exposure_claims view and answer in English. "
+            "Prefer the vw_risk_genie_exposure_claims view and answer in English. "
             "When aggregated metrics are available, return a markdown table with stable columns and numeric values; do not invent data. "
             f"User question: {question}"
         )

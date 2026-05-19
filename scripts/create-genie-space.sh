@@ -6,8 +6,8 @@ source "$SCRIPT_DIR/lib/common.sh"
 load_local_env
 
 require_env WAREHOUSE_ID
-export GENIE_SPACE_TITLE="${GENIE_SPACE_TITLE:-UC3 Risk Exposure Genie Demo}"
-export GENIE_SPACE_DESCRIPTION="${GENIE_SPACE_DESCRIPTION:-Genie Space for conversational analytics over synthetic exposure, overdue balance, claims, and broker data for the UC3 Generative UI demo.}"
+export GENIE_SPACE_TITLE="${GENIE_SPACE_TITLE:-Risk Exposure Genie Demo}"
+export GENIE_SPACE_DESCRIPTION="${GENIE_SPACE_DESCRIPTION:-Genie Space for conversational analytics over synthetic exposure, overdue balance, claims, and broker data for the Risk Exposure Generative UI demo.}"
 
 existing_id="$(databricks_api GET /api/2.0/genie/spaces | python3 -c 'import json,os,sys; title=os.environ["GENIE_SPACE_TITLE"]; d=json.load(sys.stdin); print(next((s.get("space_id","") for s in d.get("spaces",[]) if s.get("title")==title), ""))')"
 if [[ -n "$existing_id" ]]; then

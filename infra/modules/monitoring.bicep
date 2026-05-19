@@ -17,7 +17,7 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
   location: location
   tags: union(tags, {
     component: 'monitoring'
-    uc3Role: 'demo-observability'
+    riskRole: 'demo-observability'
   })
   properties: {
     retentionInDays: retentionInDays

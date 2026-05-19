@@ -1,4 +1,4 @@
-# UC3 Risk Analytics Visualization Skill
+# Risk Exposure Risk Analytics Visualization Skill
 
 Use English for user-facing text. Always use the real Foundry/Genie result; never invent numbers.
 

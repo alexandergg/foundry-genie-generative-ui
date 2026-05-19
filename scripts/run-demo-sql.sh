@@ -6,9 +6,9 @@ source "$SCRIPT_DIR/lib/common.sh"
 load_local_env
 
 require_env WAREHOUSE_ID
-require_env UC3_CATALOG
-export UC3_SCHEMA="${UC3_SCHEMA:-default}"
-export SQL_FILE="${SQL_FILE:-$UC3_ROOT/databricks/sql/uc3_demo_setup.sql}"
+require_env DEMO_CATALOG
+export DEMO_SCHEMA="${DEMO_SCHEMA:-default}"
+export SQL_FILE="${SQL_FILE:-$DEMO_ROOT/databricks/sql/risk_demo_setup.sql}"
 ALLOW_WAREHOUSE_START="${ALLOW_WAREHOUSE_START:-no}"
 
 state="$(warehouse_state)"
@@ -27,12 +27,12 @@ if not token:
         'az','account','get-access-token','--resource','2ff814a6-3304-4ab8-85cb-cd0e6f879c1d','--query','accessToken','-o','tsv'
     ], text=True).strip()
 warehouse=os.environ['WAREHOUSE_ID']
-catalog=os.environ['UC3_CATALOG']
-schema=os.environ.get('UC3_SCHEMA','default')
+catalog=os.environ['DEMO_CATALOG']
+schema=os.environ.get('DEMO_SCHEMA','default')
 sql_path=os.environ.get('SQL_FILE')
 with open(sql_path, encoding='utf-8') as f:
     sql=f.read()
-sql=sql.replace('uc3_risk_demo', catalog).replace('analytics', schema)
+sql=sql.replace('risk_demo', catalog).replace('analytics', schema)
 statements=[s.strip() for s in re.split(r';\s*(?:\n|$)', sql) if s.strip() and not s.strip().startswith('-- Useful checks')]
 
 def request(method, path, body=None):

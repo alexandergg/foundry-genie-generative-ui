@@ -33,4 +33,4 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 | Agent bridge | `apps/agent` | FastAPI, LangGraph/AG-UI, HITL approval, Foundry invocation, visualization mapping |
 | Azure infra | `infra` | Databricks workspace, ADLS Gen2, Log Analytics |
 | Databricks setup | `databricks/sql` and `scripts` | Demo data, SQL warehouse, Genie Space, permissions |
-| Foundry setup | `scripts/60-setup-foundry-genie-agent.sh` | RemoteTool connection and Prompt Agent version |
+| Foundry setup | `scripts/setup-foundry-genie-agent.sh` | RemoteTool connection and Prompt Agent version |

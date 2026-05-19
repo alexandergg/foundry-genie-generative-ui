@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CopilotChat, useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
 import { DatabricksGenieMark } from "@/components/databricks-genie-mark";
 import { DashboardStage, setDashboardLoading } from "@/components/generative-ui/dashboard-stage";
-import { useUc3GenerativeUI } from "@/hooks/use-uc3-generative-ui";
+import { useRiskGenerativeUI } from "@/hooks/use-risk-generative-ui";
 
 const suggestions = [
   { label: "Exposure by country", prompt: "What is the total exposure by country in 2026-Q2?" },
@@ -14,7 +14,7 @@ const suggestions = [
 ];
 
 export default function HomePage() {
-  useUc3GenerativeUI();
+  useRiskGenerativeUI();
   const { agent } = useAgent();
   const { copilotkit } = useCopilotKit();
   const chatWrapRef = useRef<HTMLDivElement>(null);
