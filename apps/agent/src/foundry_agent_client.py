@@ -117,7 +117,7 @@ class FoundryAgentClient:
         return (
             f"{context_instruction}"
             "If you do call Databricks Genie, start a new Genie query/conversation; do not reuse Databricks Genie conversation_id values or IDs such as 1. "
-            "Prefer the vw_risk_genie_exposure_claims view and answer in English. "
+            "Prefer the vw_risk_genie_exposure_claims view and answer in the same language as the user. "
             "When aggregated metrics are available, return a markdown table with stable columns and numeric values; do not invent data. "
             f"User question: {question}"
         )

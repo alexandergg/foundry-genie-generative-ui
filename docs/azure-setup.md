@@ -117,7 +117,7 @@ The script:
 
 1. Creates or updates a Foundry `RemoteTool` project connection targeting the Databricks Genie MCP endpoint.
 2. Uses `ProjectManagedIdentity` authentication with the Azure Databricks audience.
-3. Creates a Foundry prompt agent version with an MCP tool.
+3. Creates a Foundry prompt agent version with an MCP tool and the instructions from `scripts/foundry-genie-agent-instructions.txt`.
 4. Writes `.foundry/agent-metadata.yaml` for the local AG-UI bridge.
 
 ## 8. Grant Databricks permissions to the Foundry project managed identity

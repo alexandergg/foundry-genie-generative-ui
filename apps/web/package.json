@@ -9,6 +9,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@ag-ui/client": "0.0.52",
+    "@azure/identity": "^4.13.0",
     "@copilotkit/react-core": "next",
     "@copilotkit/react-ui": "next",
     "@copilotkit/runtime": "next",

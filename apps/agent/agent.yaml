@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/AgentSchema/refs/heads/main/schemas/v1.0/ContainerAgent.yaml
+kind: hosted
+name: risk-exposure-ag-ui-hosted
+protocols:
+  - protocol: invocations
+    version: 1.0.0
+resources:
+  cpu: "0.5"
+  memory: 1Gi
+environment_variables:
+  - name: FOUNDRY_AGENT_NAME
+    value: "risk-exposure-genie-agent"
+  - name: FOUNDRY_AGENT_VERSION
+    value: ""
+  - name: FOUNDRY_REQUIRE_HUMAN_DATA_APPROVAL
+    value: "true"
+  - name: FOUNDRY_MCP_APPROVAL_ROUNDS
+    value: "20"
+  - name: FOUNDRY_TRANSIENT_RESPONSE_RETRIES
+    value: "2"

@@ -25,7 +25,7 @@ cp apps/web/.env.example apps/web/.env.local
 cp apps/agent/.env.example apps/agent/.env
 ```
 
-Usually, `apps/agent/.env` only needs overrides if you do not want to use `.foundry/agent-metadata.yaml`.
+Usually, `apps/agent/.env` only needs overrides if you do not want to use `.foundry/agent-metadata.yaml`. The web app defaults to the local FastAPI AG-UI endpoint and can be pointed at a hosted Invocations endpoint with `AG_UI_AGENT_URL`.
 
 Important backend settings:
 
@@ -37,6 +37,16 @@ Important backend settings:
 | `FOUNDRY_MCP_APPROVAL_ROUNDS` | Internal MCP approval continuation limit |
 | `FOUNDRY_REQUIRE_HUMAN_DATA_APPROVAL` | Shows the pre-query HITL approval card |
 | `FOUNDRY_TRANSIENT_RESPONSE_RETRIES` | Retries transient warehouse/query-pending responses |
+| `PORT` | Local FastAPI port; defaults to 8123 |
+
+Important web settings:
+
+| Variable | Purpose |
+| --- | --- |
+| `AG_UI_AGENT_URL` | Preferred AG-UI endpoint. Use the local FastAPI URL or a Foundry Hosted Agent Invocations URL. |
+| `AG_UI_AGENT_AUTH` | Set to `azure-identity` when the Next.js route should acquire an Entra token for a hosted Foundry endpoint. |
+| `AG_UI_AGENT_SCOPE` | Optional token scope override; defaults to `https://ai.azure.com/.default`. |
+| `LANGGRAPH_DEPLOYMENT_URL` | Backward-compatible fallback for the local AG-UI endpoint. |
 
 ## Run locally
 
@@ -53,6 +63,14 @@ npm run dev:web
 ```
 
 Open <http://localhost:3000>.
+
+To run the Foundry-hosted entrypoint locally with the Invocations host, use:
+
+```bash
+npm run dev:agent:hosted
+```
+
+That command expects `FOUNDRY_PROJECT_ENDPOINT` to be available through `apps/agent/.env`, the shell environment, or a Foundry local run command. Keep the regular `npm run dev:agent` flow for day-to-day frontend work unless you are validating hosted-agent packaging.
 
 ## Validate before presenting
 

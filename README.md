@@ -10,8 +10,9 @@ The demo shows a conversational analytics experience where a user asks business 
 Browser
   → Next.js + CopilotKit UI
   → /api/copilotkit
-  → CopilotRuntime remote endpoint
-  → FastAPI AG-UI/LangGraph bridge
+  → CopilotRuntime + AG-UI HttpAgent
+  → Local FastAPI AG-UI bridge or Foundry Hosted Agent invocations endpoint
+  → LangGraph HITL + controlled UI mapping
   → Microsoft Foundry Prompt Agent
   → Databricks Genie MCP endpoint
   → Databricks SQL Warehouse + Unity Catalog demo view
@@ -24,7 +25,7 @@ See [docs/architecture.md](docs/architecture.md) for details.
 ```text
 apps/
   web/                 # Next.js + CopilotKit + controlled Generative UI components
-  agent/               # FastAPI AG-UI bridge that invokes Microsoft Foundry
+  agent/               # AG-UI/LangGraph bridge plus Foundry Hosted Agent invocations entrypoint
 infra/                 # Azure Bicep for Databricks, ADLS Gen2, and monitoring
 databricks/sql/        # Synthetic Risk Exposure demo dataset and business-facing view
 scripts/               # Azure, Databricks, Genie, Foundry, validation, and cost-control scripts
@@ -38,7 +39,7 @@ docs/                  # Step-by-step setup, local runbook, demo script, and ope
    Follow [docs/azure-setup.md](docs/azure-setup.md) to deploy the resource group, Databricks workspace, SQL Warehouse, demo data, Genie Space, Microsoft Foundry agent, and permissions.
 
 2. **Run the AG-UI bridge and web app locally**
-   Follow [docs/local-development.md](docs/local-development.md).
+   Follow [docs/local-development.md](docs/local-development.md). The default local path uses FastAPI on port 8123; the same AG-UI/LangGraph runtime can also run as a Foundry Hosted Agent over the Invocations protocol.
 
 3. **Run the live demo**
    Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates conversational memory and rich visual components.
@@ -86,5 +87,6 @@ See [docs/cost-control.md](docs/cost-control.md).
 - Databricks Genie API: <https://learn.microsoft.com/azure/databricks/genie/conversation-api>
 - Microsoft Foundry MCP tools: <https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol>
 - Foundry hosted agents quickstart: <https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent>
+- Foundry hosted agent runtime components: <https://learn.microsoft.com/azure/ai-foundry/agents/concepts/runtime-components?view=foundry>
 - CopilotKit: <https://docs.copilotkit.ai/>
 - AG-UI protocol: <https://docs.ag-ui.com/>

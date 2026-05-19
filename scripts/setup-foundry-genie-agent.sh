@@ -13,8 +13,14 @@ require_env GENIE_SPACE_ID
 
 export FOUNDRY_GENIE_CONNECTION_NAME="${FOUNDRY_GENIE_CONNECTION_NAME:-databricks-genie-risk-mcp}"
 export FOUNDRY_GENIE_AGENT_NAME="${FOUNDRY_GENIE_AGENT_NAME:-risk-exposure-genie-agent}"
+export FOUNDRY_GENIE_PROMPT_TEMPLATE="${FOUNDRY_GENIE_PROMPT_TEMPLATE:-$SCRIPT_DIR/foundry-genie-agent-instructions.txt}"
 GENIE_MCP_ENDPOINT="${DATABRICKS_HOST%/}/api/2.0/mcp/genie/$GENIE_SPACE_ID"
 DATABRICKS_AUDIENCE="2ff814a6-3304-4ab8-85cb-cd0e6f879c1d"
+
+if [[ ! -f "$FOUNDRY_GENIE_PROMPT_TEMPLATE" ]]; then
+  echo "Missing Foundry Genie prompt template: $FOUNDRY_GENIE_PROMPT_TEMPLATE" >&2
+  exit 2
+fi
 
 connection_id="$FOUNDRY_PROJECT_RESOURCE_ID/connections/$FOUNDRY_GENIE_CONNECTION_NAME"
 body="$(mktemp)"
@@ -49,6 +55,8 @@ fi
 
 "$venv_dir/bin/python" - <<'PY'
 import os
+from pathlib import Path
+
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 
@@ -59,22 +67,22 @@ connection=os.environ.get('FOUNDRY_GENIE_CONNECTION_NAME','databricks-genie-risk
 genie_space_id=os.environ['GENIE_SPACE_ID']
 genie_endpoint=os.environ['DATABRICKS_HOST'].rstrip('/') + '/api/2.0/mcp/genie/' + genie_space_id
 warehouse=os.environ.get('WAREHOUSE_NAME','Risk Exposure Genie Demo 2X-Small')
+prompt_template=Path(os.environ['FOUNDRY_GENIE_PROMPT_TEMPLATE'])
+view_name=os.environ.get('DEMO_VIEW_NAME','vw_risk_genie_exposure_claims')
+catalog=os.environ.get('DEMO_CATALOG','').strip()
+schema=os.environ.get('DEMO_SCHEMA','default').strip()
+preferred_view='.'.join(part for part in [catalog, schema, view_name] if part)
+instructions=prompt_template.read_text(encoding='utf-8').format(
+    preferred_view=preferred_view,
+    preferred_view_short=view_name,
+    warehouse=warehouse,
+)
 client=AIProjectClient(endpoint=endpoint, credential=DefaultAzureCredential())
 
 definition={
     'kind': 'prompt',
     'model': model,
-    'instructions': f'''You are the Risk Exposure conversational analytics agent for the Risk & Exposure Intelligence Copilot demo.
-
-Use Azure Databricks Genie only when the user asks about exposure, overdue balances, claims, brokers, countries, product lines, legal entities, quarters, or other metrics available in the Risk Exposure Genie Space.
-
-The Genie MCP tool expects natural-language questions. Do not send SQL, do not invent table or column names, and do not use generic tables such as claims. To guide Genie, prefer the business-facing view vw_risk_genie_exposure_claims, which contains: fiscal_quarter, country, legal_entity, risk_class, product_line, broker_segment, broker_name, policy_count, total_exposure_eur, total_overdue_balance_eur, total_claim_amount_eur, and claim_count.
-
-Example: for brokers with the highest claim amount, ask Genie in natural language: "Using vw_risk_genie_exposure_claims, show the top 10 broker_name values by total_claim_amount_eur."
-
-If Genie cannot answer because the SQL Warehouse is stopped, tell the user to start the SQL Warehouse "{warehouse}" and retry. Never invent figures.
-
-Always answer in English. Return business summaries, filters, assumptions, and a markdown table with stable numeric columns whenever aggregated metrics are available.''',
+    'instructions': instructions,
     'temperature': 0.2,
     'tools': [{
         'type': 'mcp',

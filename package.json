@@ -7,6 +7,7 @@
     "build:web": "npm --workspace apps/web run build",
     "lint:web": "npm --workspace apps/web run lint",
     "dev:agent": "apps/agent/.venv/bin/uvicorn main:app --app-dir apps/agent --host 0.0.0.0 --port 8123 --reload",
+    "dev:agent:hosted": "cd apps/agent && .venv/bin/python hosted_main.py",
     "install:agent": "python3.12 -m venv apps/agent/.venv && apps/agent/.venv/bin/python -m pip install --upgrade pip && apps/agent/.venv/bin/python -m pip install -e 'apps/agent[dev]'",
     "validate:agent": "scripts/validate-agent.sh",
     "validate:web": "npm run lint:web && npm run build:web",

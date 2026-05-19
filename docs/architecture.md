@@ -7,19 +7,21 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 ## Runtime flow
 
 1. The user interacts with the Next.js app.
-2. CopilotKit sends the conversation to `/api/copilotkit`.
-3. The Next.js route forwards the run to the FastAPI AG-UI bridge.
-4. The bridge requests explicit human approval before governed data access.
-5. After approval, the bridge invokes the Microsoft Foundry agent through the Foundry Responses API.
-6. The Foundry agent uses a Databricks Genie MCP RemoteTool connection.
+2. CopilotKit sends the conversation to `/api/copilotkit`; the browser never calls Foundry directly.
+3. The Next.js route uses an AG-UI `HttpAgent` and forwards the run to either the local FastAPI endpoint or a Microsoft Foundry Hosted Agent Invocations endpoint.
+4. The AG-UI/LangGraph runtime requests explicit human approval before governed data access.
+5. After approval, the runtime invokes the Microsoft Foundry prompt agent through the Foundry Responses API.
+6. The Foundry prompt agent uses a Databricks Genie MCP RemoteTool connection.
 7. Genie queries the curated Unity Catalog view with a SQL Warehouse.
-8. The bridge converts the answer/table into controlled component calls.
+8. The AG-UI/LangGraph runtime converts the answer/table into controlled component calls.
 9. The UI renders KPIs, tables, charts, narrative cards, and follow-up actions.
 
 ## Key design choices
 
-- The browser never calls Foundry or Databricks directly.
-- Secrets and cloud credentials stay in the backend process.
+- The browser never calls Foundry or Databricks directly; `/api/copilotkit` remains the web boundary.
+- Secrets and cloud credentials stay in backend processes. For hosted endpoints, the Next.js route can use server-side Azure identity to call Foundry Invocations.
+- AG-UI stays as the UI protocol because it is purpose-built for streaming agent UI, human-in-the-loop cards, state, and controlled component rendering.
+- The local FastAPI endpoint and hosted Invocations entrypoint share the same LangGraph behavior to avoid divergent demo logic.
 - Financial/analytics visualizations are controlled React components, not arbitrary HTML from the model.
 - Foundry conversation IDs are preserved so the agent can use previous Genie context.
 - Local session context can answer simple follow-ups from the last returned table without a new Genie call.
@@ -30,7 +32,13 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 | Area | Path | Responsibility |
 | --- | --- | --- |
 | Web app | `apps/web` | Next.js, CopilotKit runtime route, chat shell, controlled UI components |
-| Agent bridge | `apps/agent` | FastAPI, LangGraph/AG-UI, HITL approval, Foundry invocation, visualization mapping |
+| Agent runtime | `apps/agent` | Local FastAPI AG-UI endpoint, Foundry Hosted Agent Invocations entrypoint, LangGraph HITL approval, Foundry invocation, visualization mapping |
 | Azure infra | `infra` | Databricks workspace, ADLS Gen2, Log Analytics |
 | Databricks setup | `databricks/sql` and `scripts` | Demo data, SQL warehouse, Genie Space, permissions |
 | Foundry setup | `scripts/setup-foundry-genie-agent.sh` | RemoteTool connection and Prompt Agent version |
+
+## Azure-native hosted agent path
+
+The recommended cloud shape keeps CopilotKit/AG-UI for the web experience, but runs the custom AG-UI/LangGraph runtime as a **Microsoft Foundry Hosted Agent** using the **Invocations** protocol. The hosted entrypoint is `apps/agent/hosted_main.py`; local development can continue to use `main.py` and FastAPI on port 8123.
+
+Foundry Hosted Agents provide the Azure-managed container endpoint, lifecycle, identity, and telemetry boundary for custom agent code. Invocations is used instead of the Responses protocol because AG-UI is a custom streaming UI protocol and the runtime must emit deterministic component/tool events.
