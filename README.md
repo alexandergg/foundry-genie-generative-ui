@@ -36,31 +36,46 @@ docs/                  # Step-by-step setup, local runbook, demo script, and ope
 
 ## Getting started
 
-1. **Deploy Azure and Databricks resources**
-   Follow [docs/azure-setup.md](docs/azure-setup.md) to deploy the new resource group, Microsoft Foundry project/model, Key Vault, ACR, Application Insights tracing connections, and permissions while reusing the existing UC3 Databricks Genie workspace by default.
+This is a **live Azure demo**, not an offline mock. The frontend can run locally, but useful answers require a deployed Microsoft Foundry prompt agent connected to Databricks Genie. You can then choose whether the custom AG-UI/LangGraph runtime runs locally or as a Foundry Hosted Agent.
 
-2. **Run the AG-UI bridge and web app locally**
-   Follow [docs/local-development.md](docs/local-development.md). The default local path uses FastAPI on port 8123; the same AG-UI/LangGraph runtime can also run as a Foundry Hosted Agent over the Invocations protocol.
+1. **Deploy the cloud foundation**
+   Follow [docs/azure-setup.md](docs/azure-setup.md) through validation step 9. This creates the Microsoft Foundry project/model, Key Vault, ACR, Application Insights tracing connections, and the Foundry prompt agent. Configure `infra/main.demo.bicepparam` to reuse your existing Databricks Genie workspace or to deploy a new one.
 
-3. **Run the live demo**
-   Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates conversational memory and rich visual components.
+2. **Choose a runtime path**
+   - **Recommended demo path:** deploy the AG-UI runtime as a Foundry Hosted Agent, then run only the frontend locally.
+   - **Developer path:** run the AG-UI/FastAPI bridge locally; it still calls the deployed Foundry prompt agent and Databricks Genie.
 
-## Quick local run
+3. **Run the frontend locally**
+   Follow [docs/local-development.md](docs/local-development.md) to configure `apps/web/.env.local`, authenticate with Azure CLI, and start the Next.js app.
 
-After Azure/Databricks/Foundry setup is complete and `.foundry/agent-metadata.yaml` exists:
+4. **Run the live demo**
+   Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates approval, conversational memory, traces, and rich visual components.
+
+## Quick local frontend run
+
+After cloud setup is complete and you have a Foundry Hosted Agent Invocations endpoint:
 
 ```bash
 npm install
-npm run install:agent
+cp apps/web/.env.example apps/web/.env.local
+```
 
-# terminal 1
-npm run dev:agent
+Set these values in `apps/web/.env.local`:
 
-# terminal 2
+```bash
+AG_UI_AGENT_URL="https://<hosted-agent-invocations-endpoint>"
+AG_UI_AGENT_AUTH="azure-identity"
+AG_UI_AGENT_SCOPE="https://ai.azure.com/.default"
+```
+
+Then run:
+
+```bash
+az login
 npm run dev:web
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:3000>. For the local FastAPI bridge alternative, see [docs/local-development.md](docs/local-development.md#run-with-the-local-ag-ui-bridge).
 
 ## Validation
 

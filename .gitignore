@@ -30,6 +30,7 @@ apps/web/.env.local
 apps/agent/.env
 .risk.env.local
 .foundry/agent-metadata.yaml
+.azure/
 
 # OS/editor
 .DS_Store

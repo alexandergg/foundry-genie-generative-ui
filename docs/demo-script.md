@@ -8,7 +8,7 @@ Demonstrate that a user can ask governed business questions, approve access, rec
 
 1. Run `./scripts/validate-risk.sh`.
 2. Start the SQL Warehouse if needed.
-3. Start the local agent and web app, or point the web BFF at the Foundry Hosted Agent Invocations endpoint.
+3. Recommended: run only the frontend locally and point the web BFF at the Foundry Hosted Agent Invocations endpoint. Alternative: start both the local AG-UI bridge and web app for backend development.
 4. Open <http://localhost:3000>.
 5. Confirm the Foundry project is connected to Application Insights if you want to show traces after the run.
 

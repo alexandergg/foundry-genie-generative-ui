@@ -1,6 +1,12 @@
 # Azure, Databricks, Genie, and Microsoft Foundry setup
 
-This runbook prepares the live cloud side of the demo.
+This runbook prepares the live cloud side of the demo. The frontend can run locally, but the demo needs cloud agents: the Foundry prompt Genie agent is required for data-backed answers, and the Foundry Hosted Agent is the recommended runtime when you want to run only the frontend on your machine.
+
+Minimum path to use the local frontend:
+
+1. Complete steps 1-9 to create the Foundry prompt agent and validate the Databricks/Genie connection.
+2. Complete step 10 to deploy the AG-UI runtime as a Foundry Hosted Agent.
+3. Configure `apps/web/.env.local` with the hosted Invocations endpoint as shown in [local-development.md](local-development.md#run-frontend-locally-with-the-hosted-agent).
 
 ## 0. Prerequisites
 
@@ -50,6 +56,11 @@ Minimum values before infrastructure deployment:
 - `LOCATION`
 - `RESOURCE_GROUP`
 
+Also edit `infra/main.demo.bicepparam` before deployment:
+
+- To reuse an existing Databricks workspace, keep `deployDatabricksWorkspace = false` and replace `existingDatabricksResourceGroupName` / `existingDatabricksWorkspaceName`.
+- To create a new workspace, set `deployDatabricksWorkspace = true` and choose the desired Databricks parameters.
+
 ## 2. Deploy Azure infrastructure
 
 ```bash
@@ -59,7 +70,7 @@ Minimum values before infrastructure deployment:
 
 The Bicep deployment creates:
 
-- Azure Databricks workspace only when `deployDatabricksWorkspace = true`. The demo parameter file reuses the existing UC3 workspace in `rg-uc3-databricks-genie-poc`.
+- Azure Databricks workspace only when `deployDatabricksWorkspace = true`. The demo parameter file is set up to reuse an existing workspace, but you must replace the placeholder `existingDatabricks*` values with your own resource names before deployment.
 - ADLS Gen2 storage account for demo/data readiness.
 - Microsoft Foundry AI Services account, project, and default `gpt-5.4` model deployment (`gpt-5-4` deployment name, version `2026-03-05`).
 - Key Vault with RBAC authorization for future secret references.
@@ -67,7 +78,7 @@ The Bicep deployment creates:
 - Azure Container Registry for the Foundry Hosted Agent image.
 - Log Analytics workspace and workspace-based Application Insights for agent telemetry, connected to the Foundry account and project so prompt and hosted agent traces can flow to the Foundry Traces experience.
 
-It intentionally does not create Databricks data-plane objects such as SQL Warehouses or Genie Spaces. By default `infra/main.demo.bicepparam` points the Genie integration at the existing Databricks workspace `dbw-uc3genie-poc-hmpwknyf` in `rg-uc3-databricks-genie-poc`; change `deployDatabricksWorkspace` and the `existingDatabricks*` parameters if you want a fresh workspace. If Foundry model capacity is unavailable in your selected region, set `deployFoundryModel = false` and use an existing model deployment.
+It intentionally does not create Databricks data-plane objects such as SQL Warehouses or Genie Spaces. By default `infra/main.demo.bicepparam` expects an existing Databricks workspace; replace `existingDatabricksResourceGroupName` and `existingDatabricksWorkspaceName` with your values, or set `deployDatabricksWorkspace = true` if you want a fresh workspace. If Foundry model capacity is unavailable in your selected region, set `deployFoundryModel = false` and use an existing model deployment.
 
 After deployment, update `.risk.env.local` with the outputs:
 
