@@ -165,6 +165,8 @@ module foundry './modules/foundry.bicep' = {
     modelSkuName: foundryModelSkuName
     modelCapacity: foundryModelCapacity
     publicNetworkAccess: foundryPublicNetworkAccess
+    applicationInsightsResourceId: monitoring.outputs.applicationInsightsResourceId
+    applicationInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
     tags: tags
   }
 }
@@ -189,6 +191,7 @@ output sampleDataContainerName string = storage.outputs.sampleDataContainerName
 output unityCatalogContainerName string = storage.outputs.unityCatalogContainerName
 output logAnalyticsWorkspaceName string = monitoring.outputs.workspaceName
 output applicationInsightsName string = monitoring.outputs.applicationInsightsName
+output applicationInsightsResourceId string = monitoring.outputs.applicationInsightsResourceId
 output applicationInsightsConnectionString string = monitoring.outputs.applicationInsightsConnectionString
 output keyVaultName string = keyVault.outputs.keyVaultName
 output keyVaultUri string = keyVault.outputs.keyVaultUri

@@ -63,7 +63,7 @@ The Bicep deployment creates:
 - Key Vault with RBAC authorization for future secret references.
 - User-assigned managed identity for app/agent runtime use.
 - Azure Container Registry for the Foundry Hosted Agent image.
-- Log Analytics workspace and workspace-based Application Insights for agent telemetry.
+- Log Analytics workspace and workspace-based Application Insights for agent telemetry, connected to the Foundry account and project so prompt and hosted agent traces can flow to the Foundry Traces experience.
 
 It intentionally does not create Databricks data-plane objects such as SQL Warehouses or Genie Spaces. By default `infra/main.demo.bicepparam` points the Genie integration at the existing Databricks workspace `dbw-uc3genie-poc-hmpwknyf` in `rg-uc3-databricks-genie-poc`; change `deployDatabricksWorkspace` and the `existingDatabricks*` parameters if you want a fresh workspace. If Foundry model capacity is unavailable in your selected region, set `deployFoundryModel = false` and use an existing model deployment.
 
@@ -127,6 +127,8 @@ Then open the Genie Space in Databricks and add the guidance from [docs/genie-sp
 The default Bicep deployment now creates the Microsoft Foundry AI Services account, Foundry project, and `gpt-5.4` model deployment with deployment name `gpt-5-4` and version `2026-03-05`. Confirm that `.risk.env.local` contains the `foundryProjectEndpoint`, `foundryProjectResourceId`, and `foundryModelDeploymentName` outputs from step 2.
 
 If you disabled `deployFoundryModel` or need a different model for quota/capacity reasons, create or select that deployment in Foundry and set `FOUNDRY_MODEL_DEPLOYMENT` to its deployment name.
+
+The same Bicep deployment also creates `AppInsights` connections at the Foundry account and project scopes. This is required for the prompt Genie agent and the hosted AG-UI agent to show server-side traces in Foundry and to store telemetry in Application Insights.
 
 ## 7. Create the Foundry RemoteTool connection and agent
 
@@ -201,7 +203,7 @@ export AG_UI_AGENT_AUTH="azure-identity"
 export AG_UI_AGENT_SCOPE="https://ai.azure.com/.default"
 ```
 
-Validate with a safe prompt first, then use the normal approval card before any governed Genie query. Keep Databricks compute stopped when the demo is idle.
+Validate with a safe prompt first, then use the normal approval card before any governed Genie query. After validation, check Foundry Traces or Application Insights for both `risk-exposure-genie-agent` and `risk-exposure-ag-ui-hosted`. Keep Databricks compute stopped when the demo is idle.
 
 ## 11. Stop compute after setup or demo
 

@@ -3,7 +3,9 @@ environments:
   dev:
     projectEndpoint: https://<foundry-resource>.services.ai.azure.com/api/projects/<project-name>
     agentName: risk-exposure-genie-agent
-    model: gpt-4.1-mini
+    model: gpt-5-4
+    observability:
+      applicationInsightsResourceId: /subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Insights/components/<app-insights-name>
     databricksGenieMcpEndpoint: https://<databricks-host>/api/2.0/mcp/genie/<genie-space-id>
     databricksGenieProjectConnectionName: databricks-genie-risk-mcp
     databricksGenieSpaceId: <genie-space-id>

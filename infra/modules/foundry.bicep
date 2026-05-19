@@ -36,6 +36,13 @@ param modelCapacity int = 1
 ])
 param publicNetworkAccess string = 'Enabled'
 
+@description('Application Insights resource ID to connect to the Foundry account for agent traces.')
+param applicationInsightsResourceId string
+
+@secure()
+@description('Application Insights connection string used by the Foundry tracing connection.')
+param applicationInsightsConnectionString string
+
 @description('Common resource tags.')
 param tags object
 
@@ -95,6 +102,32 @@ resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-
     })
     versionUpgradeOption: 'OnceCurrentVersionExpired'
   }
+}
+
+var applicationInsightsConnectionProperties = {
+  category: 'AppInsights'
+  target: applicationInsightsResourceId
+  authType: 'ApiKey'
+  isSharedToAll: true
+  credentials: {
+    key: applicationInsightsConnectionString
+  }
+  metadata: {
+    ApiType: 'Azure'
+    ResourceId: applicationInsightsResourceId
+  }
+}
+
+resource applicationInsightsAccountConnection 'Microsoft.CognitiveServices/accounts/connections@2025-06-01' = {
+  parent: account
+  name: 'application-insights-traces'
+  properties: applicationInsightsConnectionProperties
+}
+
+resource applicationInsightsProjectConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-06-01' = {
+  parent: project
+  name: 'application-insights-traces'
+  properties: applicationInsightsConnectionProperties
 }
 
 output accountName string = account.name
