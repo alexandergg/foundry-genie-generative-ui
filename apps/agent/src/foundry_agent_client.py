@@ -124,9 +124,11 @@ class FoundryAgentClient:
 
     def ask(self, question: str, conversation_id: str | None = None) -> FoundryAgentResponse:
         if not self.settings.project_endpoint:
-            raise RuntimeError("FOUNDRY_PROJECT_ENDPOINT is not configured and .foundry metadata was not found.")
+            raise RuntimeError(
+                "RISK_GENIE_PROJECT_ENDPOINT or FOUNDRY_PROJECT_ENDPOINT is not configured and .foundry metadata was not found."
+            )
         if not self.settings.agent_name:
-            raise RuntimeError("FOUNDRY_AGENT_NAME is not configured.")
+            raise RuntimeError("RISK_GENIE_AGENT_NAME or FOUNDRY_AGENT_NAME is not configured.")
 
         try:
             from azure.ai.projects import AIProjectClient

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEMO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+COMMON_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEMO_ROOT="$(cd "$COMMON_SCRIPT_DIR/../.." && pwd)"
 
 load_local_env() {
   if [[ -f "$DEMO_ROOT/.risk.env.local" ]]; then

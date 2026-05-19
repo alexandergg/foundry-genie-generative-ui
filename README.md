@@ -26,7 +26,7 @@ See [docs/architecture.md](docs/architecture.md) for details.
 apps/
   web/                 # Next.js + CopilotKit + controlled Generative UI components
   agent/               # AG-UI/LangGraph bridge plus Foundry Hosted Agent invocations entrypoint
-infra/                 # Azure Bicep for Databricks, ADLS Gen2, and monitoring
+infra/                 # Azure Bicep for Foundry, Key Vault, ACR, monitoring, and optional Databricks
 databricks/sql/        # Synthetic Risk Exposure demo dataset and business-facing view
 scripts/               # Azure, Databricks, Genie, Foundry, validation, and cost-control scripts
 docs/                  # Step-by-step setup, local runbook, demo script, and operations notes
@@ -36,7 +36,7 @@ docs/                  # Step-by-step setup, local runbook, demo script, and ope
 ## Getting started
 
 1. **Deploy Azure and Databricks resources**
-   Follow [docs/azure-setup.md](docs/azure-setup.md) to deploy the resource group, Databricks workspace, SQL Warehouse, demo data, Genie Space, Microsoft Foundry agent, and permissions.
+   Follow [docs/azure-setup.md](docs/azure-setup.md) to deploy the new resource group, Microsoft Foundry project/model, Key Vault, monitoring, ACR, and permissions while reusing the existing UC3 Databricks Genie workspace by default.
 
 2. **Run the AG-UI bridge and web app locally**
    Follow [docs/local-development.md](docs/local-development.md). The default local path uses FastAPI on port 8123; the same AG-UI/LangGraph runtime can also run as a Foundry Hosted Agent over the Invocations protocol.

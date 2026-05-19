@@ -5,16 +5,33 @@ This runbook prepares the live cloud side of the demo.
 ## 0. Prerequisites
 
 - Azure CLI authenticated with `az login`.
-- Permission to create a resource group and deploy Azure Databricks.
-- Access to a Microsoft Foundry project with a model deployment such as `gpt-4.1-mini`, or permission to create one in the Foundry portal.
-- Databricks workspace admin or equivalent permissions for SQL Warehouses, Genie Spaces, service principals, and Unity Catalog grants.
+- Permission to create a resource group and deploy Azure Databricks, Microsoft Foundry, Key Vault, Azure Container Registry, Log Analytics, and Application Insights.
+- Permission to create Azure RBAC role assignments at the deployment scope. Use `Role Based Access Control Administrator` or `User Access Administrator` for least privilege; `Owner` also works but is broader.
+- Foundry developer permissions to create project connections and agent versions. `Foundry User` is enough for development actions; use `Foundry Project Manager` only when you also need to invite/manage project collaborators.
+- Foundry/OpenAI model quota for a deployment such as `gpt-5.4`, or an existing deployment you can reference if you disable model creation in Bicep.
+- Databricks workspace admin or equivalent permissions for SQL Warehouses, Genie Spaces, service principals, entitlements, and Unity Catalog grants.
 - Python 3.10+ and Bash.
+
+The IaC assigns runtime RBAC for the managed identities it creates:
+
+| Identity | Azure scope | Role |
+| --- | --- | --- |
+| App/agent user-assigned managed identity | Foundry AI Services account | `Cognitive Services OpenAI User` and `Cognitive Services User` |
+| App/agent user-assigned managed identity | Key Vault | `Key Vault Secrets User` |
+| App/agent user-assigned managed identity | Azure Container Registry | `Container Registry Repository Reader` and `Container Registry Repository Catalog Lister` |
+| Foundry project system-assigned managed identity | Azure Container Registry | `Container Registry Repository Reader` |
+| Foundry project system-assigned managed identity | Key Vault | `Key Vault Secrets User` |
+
+The Databricks grants for Genie cannot be expressed in Azure RBAC/Bicep. They are applied later by `scripts/grant-databricks-permissions.sh` to the **Foundry project managed identity** used by the `ProjectManagedIdentity` RemoteTool connection.
 
 Official references:
 
 - Databricks Genie setup: <https://learn.microsoft.com/azure/databricks/genie/set-up>
 - Genie API requirements: <https://learn.microsoft.com/azure/databricks/genie/conversation-api>
-- Foundry MCP tools: <https://learn.microsoft.com/azure/foundry/agents/how-to/tools/model-context-protocol>
+- Databricks MCP governance: <https://learn.microsoft.com/azure/databricks/generative-ai/mcp/#governance>
+- Foundry MCP authentication: <https://learn.microsoft.com/azure/foundry/agents/how-to/mcp-authentication>
+- Foundry RBAC roles: <https://learn.microsoft.com/azure/ai-services/multi-service-resource#grant-or-obtain-developer-permissions>
+- ACR ABAC repository permissions: <https://learn.microsoft.com/azure/container-registry/container-registry-rbac-abac-repository-permissions>
 
 ## 1. Configure local deployment variables
 
@@ -40,17 +57,28 @@ Minimum values before infrastructure deployment:
 
 The Bicep deployment creates:
 
-- Azure Databricks workspace.
+- Azure Databricks workspace only when `deployDatabricksWorkspace = true`. The demo parameter file reuses the existing UC3 workspace in `rg-uc3-databricks-genie-poc`.
 - ADLS Gen2 storage account for demo/data readiness.
-- Log Analytics workspace.
+- Microsoft Foundry AI Services account, project, and default `gpt-5.4` model deployment (`gpt-5-4` deployment name, version `2026-03-05`).
+- Key Vault with RBAC authorization for future secret references.
+- User-assigned managed identity for app/agent runtime use.
+- Azure Container Registry for the Foundry Hosted Agent image.
+- Log Analytics workspace and workspace-based Application Insights for agent telemetry.
 
-It intentionally does not create Databricks data-plane objects such as SQL Warehouses or Genie Spaces.
+It intentionally does not create Databricks data-plane objects such as SQL Warehouses or Genie Spaces. By default `infra/main.demo.bicepparam` points the Genie integration at the existing Databricks workspace `dbw-uc3genie-poc-hmpwknyf` in `rg-uc3-databricks-genie-poc`; change `deployDatabricksWorkspace` and the `existingDatabricks*` parameters if you want a fresh workspace. If Foundry model capacity is unavailable in your selected region, set `deployFoundryModel = false` and use an existing model deployment.
 
-After deployment, update `.risk.env.local` with:
+After deployment, update `.risk.env.local` with the outputs:
 
 ```bash
-export DATABRICKS_WORKSPACE_NAME="<workspace-name>"
-export DATABRICKS_HOST="https://<workspace-host>"
+export DATABRICKS_WORKSPACE_NAME="<databricksWorkspaceName>"
+export DATABRICKS_HOST="https://<databricksWorkspaceUrl>"
+export FOUNDRY_PROJECT_ENDPOINT="<foundryProjectEndpoint>"
+export FOUNDRY_PROJECT_RESOURCE_ID="<foundryProjectResourceId>"
+export FOUNDRY_MODEL_DEPLOYMENT="<foundryModelDeploymentName>"
+export APPLICATIONINSIGHTS_CONNECTION_STRING="<applicationInsightsConnectionString>"
+export KEY_VAULT_URI="<keyVaultUri>"
+export AZURE_CONTAINER_REGISTRY_NAME="<containerRegistryName>"
+export AZURE_CONTAINER_REGISTRY_LOGIN_SERVER="<containerRegistryLoginServer>"
 ```
 
 ## 3. Create or reuse a Databricks SQL Warehouse
@@ -96,15 +124,9 @@ Then open the Genie Space in Databricks and add the guidance from [docs/genie-sp
 
 ## 6. Prepare the Microsoft Foundry project
 
-In Microsoft Foundry, create or select a project and deploy a model. Capture:
+The default Bicep deployment now creates the Microsoft Foundry AI Services account, Foundry project, and `gpt-5.4` model deployment with deployment name `gpt-5-4` and version `2026-03-05`. Confirm that `.risk.env.local` contains the `foundryProjectEndpoint`, `foundryProjectResourceId`, and `foundryModelDeploymentName` outputs from step 2.
 
-```bash
-export FOUNDRY_PROJECT_ENDPOINT="https://<foundry-resource>.services.ai.azure.com/api/projects/<project-name>"
-export FOUNDRY_PROJECT_RESOURCE_ID="/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<account>/projects/<project>"
-export FOUNDRY_MODEL_DEPLOYMENT="gpt-4.1-mini"
-```
-
-Add these values to `.risk.env.local`.
+If you disabled `deployFoundryModel` or need a different model for quota/capacity reasons, create or select that deployment in Foundry and set `FOUNDRY_MODEL_DEPLOYMENT` to its deployment name.
 
 ## 7. Create the Foundry RemoteTool connection and agent
 
@@ -122,16 +144,18 @@ The script:
 
 ## 8. Grant Databricks permissions to the Foundry project managed identity
 
+Run this after the SQL Warehouse and Genie Space exist, and before the first agent invocation. It can run before or after creating the Foundry agent because it grants access to the project managed identity, not to an agent version.
+
 ```bash
 ./scripts/grant-databricks-permissions.sh
 ```
 
 The script grants the Foundry project managed identity:
 
-- Databricks SQL entitlement.
+- Databricks workspace access and Databricks SQL entitlement.
 - SQL Warehouse `CAN_USE`.
 - Genie Space `CAN_RUN`.
-- Unity Catalog `USE_CATALOG`, `USE_SCHEMA`, and `SELECT` on the Risk Exposure objects.
+- Unity Catalog `USE_CATALOG`, `USE_SCHEMA`, and `SELECT` on the Risk Exposure view and supporting tables.
 
 ## 9. Validate cloud setup without querying data
 
@@ -141,7 +165,45 @@ The script grants the Foundry project managed identity:
 
 This checks Databricks warehouse metadata, Genie Space metadata, and Foundry connection metadata. It does not invoke Genie.
 
-## 10. Stop compute after setup or demo
+
+## 10. Optional: deploy the AG-UI runtime as a Foundry Hosted Agent
+
+Run this only when you want the LangGraph/AG-UI runtime to move from local FastAPI to Microsoft Foundry Agent Service. Complete steps 6-8 first so the hosted runtime can call the Foundry prompt agent and the prompt agent can call Genie.
+
+Build the container image in Azure Container Registry with an immutable timestamp tag. The hosted-agent image must be `linux/amd64`; do not publish or reference `latest`.
+
+```bash
+source .risk.env.local
+./scripts/build-hosted-agent-image.sh
+```
+
+The script uses `apps/agent/Dockerfile` and prints an image reference like:
+
+```text
+<acr-login-server>/risk-exposure-ag-ui-hosted:20260519123045
+```
+
+Create or update the Foundry Hosted Agent from `apps/agent/agent.yaml` and set the container image to that exact reference. Keep the manifest environment values deterministic using the `RISK_GENIE_*` names from the manifest; Foundry reserves `FOUNDRY_*` and `AGENT_*` for platform use in hosted containers. Do not place secrets in the image or manifest; use managed identity and Key Vault-backed configuration for production hardening.
+
+Before the first invocation, verify these access assignments:
+
+- The Foundry project managed identity has ACR `Container Registry Repository Reader` on the registry. The Bicep deployment assigns this for the project identity.
+- If the Hosted Agent service creates a per-agent managed identity, assign it the same ACR reader role if image pull fails.
+- The identity used by the web/API caller has `Foundry User` / `Azure AI User`-equivalent invoke permission at the Foundry account or project scope.
+- If Foundry reports an invocation identity during hosted-agent creation, assign that identity the required Foundry invoke role at the Foundry account scope.
+
+Then configure the Next.js BFF to call the hosted Invocations endpoint instead of local FastAPI:
+
+```bash
+export AG_UI_AGENT_URL="https://<hosted-agent-invocations-endpoint>"
+export AG_UI_AGENT_AUTH="azure-identity"
+# Optional; this is the default scope used by the route.
+export AG_UI_AGENT_SCOPE="https://ai.azure.com/.default"
+```
+
+Validate with a safe prompt first, then use the normal approval card before any governed Genie query. Keep Databricks compute stopped when the demo is idle.
+
+## 11. Stop compute after setup or demo
 
 ```bash
 ./scripts/stop-compute.sh

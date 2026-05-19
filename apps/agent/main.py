@@ -4,6 +4,7 @@ import asyncio
 import os
 import uuid
 import warnings
+from collections.abc import Sequence
 from contextlib import suppress
 from typing import Annotated, Any, TypedDict
 
@@ -49,6 +50,17 @@ def _approval_token(message: str) -> str | None:
     return token or None
 
 
+def _previous_unapproved_user_message(messages: Sequence[AnyMessage]) -> str | None:
+    for message in reversed(messages):
+        if not isinstance(message, HumanMessage) and getattr(message, "type", None) != "human":
+            continue
+        content = message.content
+        text = content if isinstance(content, str) else str(content)
+        if not _approval_token(text):
+            return text
+    return None
+
+
 def _approval_request(question: str) -> list[AnyMessage]:
     request_id = uuid.uuid4().hex[:10]
     pending_data_approvals[request_id] = question
@@ -88,9 +100,10 @@ async def run_risk(state: AgentState) -> dict[str, Any]:
     if not question:
         return {"messages": [AIMessage(content="What would you like to analyze about exposure, claims, brokers or overdue balances?")]}
 
+    input_messages = state.get("messages", [])
     approval_token = _approval_token(question)
     if approval_token:
-        approved_question = pending_data_approvals.pop(approval_token, None)
+        approved_question = pending_data_approvals.pop(approval_token, None) or _previous_unapproved_user_message(input_messages)
         if not approved_question:
             return {
                 "messages": [

@@ -33,7 +33,7 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 | --- | --- | --- |
 | Web app | `apps/web` | Next.js, CopilotKit runtime route, chat shell, controlled UI components |
 | Agent runtime | `apps/agent` | Local FastAPI AG-UI endpoint, Foundry Hosted Agent Invocations entrypoint, LangGraph HITL approval, Foundry invocation, visualization mapping |
-| Azure infra | `infra` | Databricks workspace, ADLS Gen2, Log Analytics |
+| Azure infra | `infra` | Databricks workspace, ADLS Gen2, Microsoft Foundry project/model deployment, Key Vault, managed identity, Azure Container Registry, Log Analytics, Application Insights |
 | Databricks setup | `databricks/sql` and `scripts` | Demo data, SQL warehouse, Genie Space, permissions |
 | Foundry setup | `scripts/setup-foundry-genie-agent.sh` | RemoteTool connection and Prompt Agent version |
 

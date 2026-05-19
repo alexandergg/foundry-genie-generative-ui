@@ -31,12 +31,12 @@ Important backend settings:
 
 | Variable | Purpose |
 | --- | --- |
-| `FOUNDRY_PROJECT_ENDPOINT` | Overrides metadata project endpoint |
-| `FOUNDRY_AGENT_NAME` | Foundry prompt agent name |
-| `FOUNDRY_AGENT_VERSION` | Optional explicit version such as `risk-exposure-genie-agent:3` |
-| `FOUNDRY_MCP_APPROVAL_ROUNDS` | Internal MCP approval continuation limit |
-| `FOUNDRY_REQUIRE_HUMAN_DATA_APPROVAL` | Shows the pre-query HITL approval card |
-| `FOUNDRY_TRANSIENT_RESPONSE_RETRIES` | Retries transient warehouse/query-pending responses |
+| `FOUNDRY_PROJECT_ENDPOINT` / `RISK_GENIE_PROJECT_ENDPOINT` | Overrides metadata project endpoint |
+| `FOUNDRY_AGENT_NAME` / `RISK_GENIE_AGENT_NAME` | Foundry prompt agent name |
+| `FOUNDRY_AGENT_VERSION` / `RISK_GENIE_AGENT_VERSION` | Optional explicit version such as `risk-exposure-genie-agent:3` |
+| `FOUNDRY_MCP_APPROVAL_ROUNDS` / `RISK_GENIE_MCP_APPROVAL_ROUNDS` | Internal MCP approval continuation limit |
+| `FOUNDRY_REQUIRE_HUMAN_DATA_APPROVAL` / `RISK_GENIE_REQUIRE_HUMAN_DATA_APPROVAL` | Shows the pre-query HITL approval card |
+| `FOUNDRY_TRANSIENT_RESPONSE_RETRIES` / `RISK_GENIE_TRANSIENT_RESPONSE_RETRIES` | Retries transient warehouse/query-pending responses |
 | `PORT` | Local FastAPI port; defaults to 8123 |
 
 Important web settings:
@@ -70,7 +70,7 @@ To run the Foundry-hosted entrypoint locally with the Invocations host, use:
 npm run dev:agent:hosted
 ```
 
-That command expects `FOUNDRY_PROJECT_ENDPOINT` to be available through `apps/agent/.env`, the shell environment, or a Foundry local run command. Keep the regular `npm run dev:agent` flow for day-to-day frontend work unless you are validating hosted-agent packaging.
+That command expects `FOUNDRY_PROJECT_ENDPOINT` (or `RISK_GENIE_PROJECT_ENDPOINT` for hosted-agent parity) to be available through `apps/agent/.env`, the shell environment, or a Foundry local run command. Keep the regular `npm run dev:agent` flow for day-to-day frontend work unless you are validating hosted-agent packaging. For the cloud ACR build and Hosted Agent handoff, follow [Azure setup step 10](azure-setup.md#10-optional-deploy-the-ag-ui-runtime-as-a-foundry-hosted-agent).
 
 ## Validate before presenting
 

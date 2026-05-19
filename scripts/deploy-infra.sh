@@ -2,7 +2,7 @@
 set -euo pipefail
 
 LOCATION="${LOCATION:-westeurope}"
-RESOURCE_GROUP="${RESOURCE_GROUP:-rg-risk-exposure-genui-demo}"
+RESOURCE_GROUP="${RESOURCE_GROUP:-rg-risk-exposure-genui-foundry-demo}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-risk-exposure-genui}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
