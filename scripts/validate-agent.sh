@@ -23,4 +23,4 @@ fi
 "$PYTHON_BIN" -m ruff check .
 "$PYTHON_BIN" -m mypy main.py hosted_main.py src tests
 "$PYTHON_BIN" -m pytest tests
-"$PYTHON_BIN" -m py_compile main.py hosted_main.py src/config.py src/foundry_agent_client.py src/session_context.py src/visualization_mapper.py
+"$PYTHON_BIN" -m py_compile main.py hosted_main.py src/config.py src/foundry_agent_client.py src/visualization_mapper.py

@@ -5,21 +5,11 @@ from collections.abc import AsyncIterator
 from ag_ui.core.types import RunAgentInput
 from ag_ui.encoder import EventEncoder
 from azure.ai.agentserver.invocations import InvocationAgentServerHost
-from copilotkit import LangGraphAGUIAgent
 from pydantic import ValidationError
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 
-from main import agent_graph, settings
-
-
-def _build_agent() -> LangGraphAGUIAgent:
-    return LangGraphAGUIAgent(
-        name="default",
-        description="Risk Exposure Foundry/Genie Generative UI agent",
-        graph=agent_graph,
-    )
-
+from main import build_ag_ui_agent, settings
 
 app = InvocationAgentServerHost()
 
@@ -36,7 +26,7 @@ async def handle_invoke(request: Request) -> Response:
         )
 
     encoder = EventEncoder(accept=request.headers.get("accept", ""))
-    request_agent = _build_agent()
+    request_agent = build_ag_ui_agent()
 
     async def event_generator() -> AsyncIterator[str]:
         async for event in request_agent.run(input_data):  # type: ignore[no-untyped-call]

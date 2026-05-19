@@ -71,9 +71,9 @@ export default function HomePage() {
             </div>
             <div className="live-indicator"><span /> Live</div>
           </div>
-          <div className="suggestions">
+          <div className="prompt-suggestions">
             {suggestions.map(({ label, prompt }) => (
-              <button className="suggestion" key={prompt} onClick={() => sendPrompt(prompt)}>
+              <button className="prompt-suggestion" key={prompt} onClick={() => sendPrompt(prompt)}>
                 {label}
               </button>
             ))}
