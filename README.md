@@ -23,7 +23,7 @@ See CopilotKit's [Generative UI Spectrum](https://www.copilotkit.ai/generative-u
 ## Architecture
 
 <p align="center">
-  <img src="docs/assets/azure-architecture-overview.svg" alt="High-level Azure architecture for the Risk & Exposure Intelligence Copilot" width="100%">
+  <img src="docs/assets/azure-architecture-overview.png" alt="High-level Azure architecture for the Risk & Exposure Intelligence Copilot" width="100%">
 </p>
 
 The diagram above shows the high-level Azure implementation: a controlled CopilotKit UI calls the hosted AG-UI agent in Microsoft Foundry, which coordinates governed analytics through a Foundry prompt agent and Databricks Genie MCP. Identity, secrets, container image delivery, and telemetry stay in managed Azure services.
