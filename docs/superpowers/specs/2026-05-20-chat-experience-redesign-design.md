@@ -164,3 +164,22 @@ cleanup is auditable, not silent.
 - Real model chain-of-thought streaming (backend doesn't emit it).
 - Multi-run conversation history redesign beyond per-run ProcessTrace.
 - Backend orchestration logic changes beyond event/message hygiene.
+
+## Cleanup inventory (as built)
+
+**Removed**
+- `AgentStatusCard` component (`apps/web/.../agent-status-card.tsx`), its `useComponent` registration, the `AgentStatusCardProps` Zod schema/type (`types.ts`), the `agentStatusCard` key (`registry.ts`), and all `.agent-status-card*` CSS.
+- Backend `_agent_status_message` helper, the `AGENT_STATUS_CARD` constant, and the `"agentStatusCard"` entry in `CONTROLLED_COMPONENT_NAMES`.
+- Backend `_emit_progress` helper and the `manually_emit_message` dispatch inside `_emit_ui_event` (no more per-phase text bubbles; only the structured `risk_ui_event` is emitted, plus the final answer / component messages).
+- `dashboard-store` timeline duplication: `DashboardTimelineEvent`/`TimelineEventStatus` types, the `timeline` field, `completePreviousEvents`, `appendTimelineEvent`, `setDashboardToolStatus`, `nowIso`, and the unused `UiEventKind` import. `DashboardToolStatusBridge` was deleted from `dashboard-stage.tsx`.
+
+**Kept (and why)**
+- `dashboard-store` now holds only `phase`, `plan`, `visuals` — its single responsibility (the canvas). The process/timeline lives in the new `process-store`, consumed by both `ProcessTrace` (chat) and `StatusTimeline` (dashboard), so the two views stay consistent from one source.
+- `StatusTimeline` and `formatDashboardPhase` retained; `StatusTimeline` now renders `ProcessStep[]` (structurally compatible with the old event type).
+- The `risk_ui_event` envelope contract (`contracts.ts` ↔ `ui_event_contract.py`) is unchanged and now actually consumed on the frontend.
+
+**Verification (final gate)**
+- Frontend: `vitest` 7/7, `tsc --noEmit` clean, `eslint` clean, `next build` compiles.
+- Backend: `pytest` 35 passed.
+- Legacy grep clean on both `apps/web/src` and `apps/agent`.
+- Manual browser smoke test pending (run by the user with the agent live).
