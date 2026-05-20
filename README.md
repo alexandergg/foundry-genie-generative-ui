@@ -2,13 +2,13 @@
 
 A professional demo repository for **Generative UI on Azure AI Foundry** with **Databricks Genie**, **CopilotKit**, and the **AG-UI protocol**.
 
-The demo shows a conversational analytics experience where a user asks business questions, a Microsoft Foundry agent queries a Databricks Genie Space through MCP, and the web UI renders governed answers as controlled React components: KPIs, tables, bar charts, line/area trends, donut charts, and metric comparisons.
+The demo shows an Exposure Control Room experience where a user asks business questions, approves or revises governed data access, a Microsoft Foundry agent queries a Databricks Genie Space through MCP, and the web UI renders traceable answers as controlled React components: KPIs, tables, bar charts, line/area trends, donut charts, metric comparisons, provenance footers, and executive risk signals.
 
 ## Generative UI approach
 
 CopilotKit describes Generative UI as a spectrum from developer-controlled components to fully agent-generated interfaces. This demo intentionally uses **Controlled Generative UI**, the most predictable band of that spectrum.
 
-In Controlled Generative UI, developers ship a fixed set of pre-built components and register them with the agent. At runtime, the agent chooses which component to render and supplies typed data for that component, but it cannot invent arbitrary markup, layouts, or visual surfaces. In this repository, the registered components include KPI strips, chart cards, narrative cards, approval cards, follow-up questions, and insight tables.
+In Controlled Generative UI, developers ship a fixed set of pre-built components and register them with the agent. At runtime, the agent chooses which component to render and supplies typed data for that component, but it cannot invent arbitrary markup, layouts, or visual surfaces. In this repository, the registered components include KPI strips, chart cards, narrative cards, approval cards, policy breach cards, follow-up questions, and insight tables.
 
 That model fits this demo because risk and exposure analytics need governed data access, deterministic visual payloads, and repeatable executive-facing UI. The agent can still make the experience feel dynamic by selecting the right visual for each business question, while the frontend keeps control over rendering, styling, validation, and user approval flows.
 

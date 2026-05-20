@@ -2,11 +2,12 @@
 
 import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatValue } from "./format";
+import { ProvenanceFooter } from "./provenance-footer";
 import type { LineAreaChartCardProps } from "./types";
 
 const colors = ["#2563eb", "#ff3621", "#06b6d4"];
 
-export function LineAreaChartCard({ title, data, xKey, yKeys, valueFormat = "number" }: LineAreaChartCardProps) {
+export function LineAreaChartCard({ title, data, xKey, yKeys, valueFormat = "number", provenance }: LineAreaChartCardProps) {
   const [primaryKey, ...secondaryKeys] = yKeys;
 
   return (
@@ -33,6 +34,7 @@ export function LineAreaChartCard({ title, data, xKey, yKeys, valueFormat = "num
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      <ProvenanceFooter provenance={provenance} />
     </div>
   );
 }

@@ -39,3 +39,6 @@ apps/agent/.env
 
 # Internal workflow artifacts (not for public repo)
 docs/superpowers/
+
+# TS build cache
+*.tsbuildinfo

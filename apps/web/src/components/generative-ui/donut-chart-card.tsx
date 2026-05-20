@@ -2,11 +2,12 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { formatValue } from "./format";
+import { ProvenanceFooter } from "./provenance-footer";
 import type { DonutChartCardProps } from "./types";
 
 const colors = ["#2563eb", "#ff3621", "#06b6d4", "#8b5cf6", "#f59e0b", "#10b981", "#64748b"];
 
-export function DonutChartCard({ title, data, labelKey, valueKey, valueFormat = "number" }: DonutChartCardProps) {
+export function DonutChartCard({ title, data, labelKey, valueKey, valueFormat = "number", provenance }: DonutChartCardProps) {
   return (
     <div className="viz-card">
       <h3 className="viz-title">{title}</h3>
@@ -32,6 +33,7 @@ export function DonutChartCard({ title, data, labelKey, valueKey, valueFormat = 
           ))}
         </div>
       </div>
+      <ProvenanceFooter provenance={provenance} />
     </div>
   );
 }

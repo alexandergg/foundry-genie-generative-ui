@@ -2,11 +2,12 @@
 
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatValue } from "./format";
+import { ProvenanceFooter } from "./provenance-footer";
 import type { MetricComparisonChartCardProps } from "./types";
 
 const colors = ["#2563eb", "#ff3621", "#06b6d4"];
 
-export function MetricComparisonChartCard({ title, data, xKey, yKeys, valueFormat = "number" }: MetricComparisonChartCardProps) {
+export function MetricComparisonChartCard({ title, data, xKey, yKeys, valueFormat = "number", provenance }: MetricComparisonChartCardProps) {
   return (
     <div className="viz-card">
       <h3 className="viz-title">{title}</h3>
@@ -25,6 +26,7 @@ export function MetricComparisonChartCard({ title, data, xKey, yKeys, valueForma
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <ProvenanceFooter provenance={provenance} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
-import { setDashboardLoading } from "./dashboard-stage";
+import { setDashboardPlanning } from "./dashboard-store";
 import type { FollowUpQuestionsProps } from "./types";
 
 export function FollowUpQuestions({ title, questions }: FollowUpQuestionsProps) {
@@ -9,7 +9,7 @@ export function FollowUpQuestions({ title, questions }: FollowUpQuestionsProps) 
   const { copilotkit } = useCopilotKit();
 
   const ask = (question: string) => {
-    setDashboardLoading({
+    setDashboardPlanning({
       approach: "Run a drill-down on the previous result and refresh the visual canvas.",
       technology: "Azure AI Foundry + Databricks Genie + AG-UI",
       key_elements: ["follow-up", "real query", "new chart"],

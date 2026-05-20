@@ -1,7 +1,8 @@
 import { formatValue } from "./format";
+import { ProvenanceFooter } from "./provenance-footer";
 import type { InsightTableProps } from "./types";
 
-export function InsightTable({ title, columns, rows }: InsightTableProps) {
+export function InsightTable({ title, columns, rows, provenance }: InsightTableProps) {
   return (
     <div className="viz-card">
       <h3 className="viz-title">{title}</h3>
@@ -23,6 +24,7 @@ export function InsightTable({ title, columns, rows }: InsightTableProps) {
           </tbody>
         </table>
       </div>
+      <ProvenanceFooter provenance={provenance} />
     </div>
   );
 }

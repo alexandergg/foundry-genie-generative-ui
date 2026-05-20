@@ -2,9 +2,10 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatValue } from "./format";
+import { ProvenanceFooter } from "./provenance-footer";
 import type { BarChartCardProps } from "./types";
 
-export function BarChartCard({ title, data, xKey, yKey, valueFormat = "number" }: BarChartCardProps) {
+export function BarChartCard({ title, data, xKey, yKey, valueFormat = "number", provenance }: BarChartCardProps) {
   return (
     <div className="viz-card">
       <h3 className="viz-title">{title}</h3>
@@ -26,6 +27,7 @@ export function BarChartCard({ title, data, xKey, yKey, valueFormat = "number" }
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <ProvenanceFooter provenance={provenance} />
     </div>
   );
 }

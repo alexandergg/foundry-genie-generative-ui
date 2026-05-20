@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
+
+from .component_registry import validate_component_name
+from .normalization import NormalizationWarning, build_visual_meta
 
 
 @dataclass
@@ -10,8 +14,13 @@ class ComponentCall:
     name: str
     args: dict[str, Any]
 
+    def __post_init__(self) -> None:
+        self.name = validate_component_name(self.name)
+
 
 def _parse_number(value: str) -> float | None:
+    if re.search(r"[A-Za-z]", value):
+        return None
     cleaned = re.sub(r"[^0-9,.-]", "", value).strip()
     if not cleaned:
         return None
@@ -115,6 +124,15 @@ def _format_for_key(key: str) -> str:
     return "currency" if "eur" in key.lower() or "amount" in key.lower() or "balance" in key.lower() else "number"
 
 
+def _status_for_metric(key: str) -> str:
+    lowered = key.lower()
+    if "overdue" in lowered or "breach" in lowered:
+        return "critical"
+    if "claim" in lowered or "loss" in lowered or "balance" in lowered:
+        return "attention"
+    return "stable"
+
+
 def build_follow_up_questions(question: str) -> list[str]:
     lowered = question.lower()
     if "2026-q1" in lowered and "2026-q2" in lowered:
@@ -142,11 +160,39 @@ def build_follow_up_questions(question: str) -> list[str]:
     ]
 
 
-def build_component_calls(question: str, answer: str, warehouse_name: str | None = None) -> list[ComponentCall]:
+def build_component_calls(
+    question: str,
+    answer: str,
+    warehouse_name: str | None = None,
+    approval_request_id: str | None = None,
+    trace_id: str | None = None,
+) -> list[ComponentCall]:
     headers, rows = extract_markdown_table(answer)
     if not rows:
         headers, rows = extract_bullet_metrics(answer, question)
     label_key, value_key = _pick_keys(headers, rows)
+    source = warehouse_name or "Azure AI Foundry + Databricks Genie"
+    generated_at = datetime.now(timezone.utc)
+    visual_index = 0
+    warnings = [] if rows else [NormalizationWarning("no_structured_rows", "No structured rows were detected; narrative only.")]
+
+    def with_provenance(
+        component_name: str, args: dict[str, Any], row_count: int, component_warnings: list[NormalizationWarning] | None = None
+    ) -> dict[str, Any]:
+        nonlocal visual_index
+        args["provenance"] = build_visual_meta(
+            component_name,
+            visual_index,
+            source=source,
+            row_count=row_count,
+            generated_at=generated_at,
+            approval_request_id=approval_request_id,
+            trace_id=trace_id,
+            warnings=component_warnings,
+        ).to_payload()
+        visual_index += 1
+        return args
+
     calls: list[ComponentCall] = [
         ComponentCall(
             "plan_visualization",
@@ -158,11 +204,16 @@ def build_component_calls(question: str, answer: str, warehouse_name: str | None
         ),
         ComponentCall(
             "riskNarrativeCard",
-            {
-                "title": "Executive summary",
-                "answer": answer[:1800],
-                "assumptions": ["Data queried through the real Foundry/Genie agent"],
-            },
+            with_provenance(
+                "riskNarrativeCard",
+                {
+                    "title": "Executive summary",
+                    "answer": answer[:1800],
+                    "assumptions": ["Data queried through the real Foundry/Genie agent"],
+                },
+                len(rows),
+                warnings,
+            ),
         ),
     ]
 
@@ -176,7 +227,12 @@ def build_component_calls(question: str, answer: str, warehouse_name: str | None
         calls.append(ComponentCall("warehouseStatusCard", {"warehouseName": warehouse_name, "status": status}))
 
     if rows:
-        calls.append(ComponentCall("insightTable", {"title": "Details returned by Genie", "columns": headers, "rows": rows[:12]}))
+        calls.append(
+            ComponentCall(
+                "insightTable",
+                with_provenance("insightTable", {"title": "Details returned by Genie", "columns": headers, "rows": rows[:12]}, len(rows)),
+            )
+        )
 
     if rows and label_key and value_key:
         chart_rows = rows[:10]
@@ -185,30 +241,57 @@ def build_component_calls(question: str, answer: str, warehouse_name: str | None
         calls.append(
             ComponentCall(
                 "kpiStrip",
-                {
-                    "items": [
-                        {
-                            "label": _humanize(metric_key),
-                            "value": sum(float(row.get(metric_key) or 0) for row in rows),
-                            "format": _format_for_key(metric_key),
-                        }
-                        for metric_key in metric_keys
-                    ]
-                    + [{"label": "Rows analyzed", "value": len(rows), "format": "number"}]
-                },
+                with_provenance(
+                    "kpiStrip",
+                    {
+                        "items": [
+                            {
+                                "label": _humanize(metric_key),
+                                "value": sum(float(row.get(metric_key) or 0) for row in rows),
+                                "format": _format_for_key(metric_key),
+                                "status": _status_for_metric(metric_key),
+                            }
+                            for metric_key in metric_keys
+                        ]
+                        + [{"label": "Rows analyzed", "value": len(rows), "format": "number", "status": "stable"}]
+                    },
+                    len(rows),
+                ),
+            )
+        )
+        top_row = max(rows, key=lambda row: float(row.get(value_key) or 0))
+        calls.append(
+            ComponentCall(
+                "policyBreachCard",
+                with_provenance(
+                    "policyBreachCard",
+                    {
+                        "title": f"Focus area: {_humanize(str(top_row.get(label_key, 'segment')))}",
+                        "severity": _status_for_metric(value_key),
+                        "summary": f"Highest {_humanize(value_key)} among the returned segments.",
+                        "metricLabel": _humanize(value_key),
+                        "metricValue": top_row.get(value_key, 0),
+                        "recommendation": "Review concentration drivers and use follow-up questions for drill-down before taking action.",
+                    },
+                    len(rows),
+                ),
             )
         )
         if len(metric_keys) >= 2:
             calls.append(
                 ComponentCall(
                     "metricComparisonChartCard",
-                    {
-                        "title": f"Metric comparison by {_humanize(label_key)}",
-                        "data": chart_rows,
-                        "xKey": label_key,
-                        "yKeys": metric_keys[:3],
-                        "valueFormat": _format_for_key(metric_keys[0]),
-                    },
+                    with_provenance(
+                        "metricComparisonChartCard",
+                        {
+                            "title": f"Metric comparison by {_humanize(label_key)}",
+                            "data": chart_rows,
+                            "xKey": label_key,
+                            "yKeys": metric_keys[:3],
+                            "valueFormat": _format_for_key(metric_keys[0]),
+                        },
+                        len(rows),
+                    ),
                 )
             )
         if _is_time_like_key(label_key, rows) or any(
@@ -217,38 +300,50 @@ def build_component_calls(question: str, answer: str, warehouse_name: str | None
             calls.append(
                 ComponentCall(
                     "lineAreaChartCard",
-                    {
-                        "title": f"Trend for {_humanize(label_key)}",
-                        "data": chart_rows,
-                        "xKey": label_key,
-                        "yKeys": metric_keys[:3],
-                        "valueFormat": _format_for_key(metric_keys[0]),
-                    },
+                    with_provenance(
+                        "lineAreaChartCard",
+                        {
+                            "title": f"Trend for {_humanize(label_key)}",
+                            "data": chart_rows,
+                            "xKey": label_key,
+                            "yKeys": metric_keys[:3],
+                            "valueFormat": _format_for_key(metric_keys[0]),
+                        },
+                        len(rows),
+                    ),
                 )
             )
         calls.append(
             ComponentCall(
                 "donutChartCard",
-                {
-                    "title": f"Share of {_humanize(value_key)}",
-                    "data": chart_rows[:8],
-                    "labelKey": label_key,
-                    "valueKey": value_key,
-                    "valueFormat": _format_for_key(value_key),
-                },
+                with_provenance(
+                    "donutChartCard",
+                    {
+                        "title": f"Share of {_humanize(value_key)}",
+                        "data": chart_rows[:8],
+                        "labelKey": label_key,
+                        "valueKey": value_key,
+                        "valueFormat": _format_for_key(value_key),
+                    },
+                    len(rows),
+                ),
             )
         )
         for metric_key in metric_keys[:2]:
             calls.append(
                 ComponentCall(
                     "barChartCard",
-                    {
-                        "title": f"{_humanize(metric_key)} by {_humanize(label_key)}",
-                        "data": chart_rows,
-                        "xKey": label_key,
-                        "yKey": metric_key,
-                        "valueFormat": _format_for_key(metric_key),
-                    },
+                    with_provenance(
+                        "barChartCard",
+                        {
+                            "title": f"{_humanize(metric_key)} by {_humanize(label_key)}",
+                            "data": chart_rows,
+                            "xKey": label_key,
+                            "yKey": metric_key,
+                            "valueFormat": _format_for_key(metric_key),
+                        },
+                        len(rows),
+                    ),
                 )
             )
 
