@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import uuid
 import warnings
 from collections.abc import Sequence
 from contextlib import suppress
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Literal, TypedDict
 
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint
@@ -20,6 +23,7 @@ from langgraph.graph.message import add_messages
 
 from src.config import Settings, load_settings
 from src.foundry_agent_client import CONVERSATION_ID_KEY, FoundryAgentClient, FoundryAgentResponse, RouteDecision
+from src.ui_event_contract import UiEventKind, UiEventPhase, build_ui_event
 from src.visualization_mapper import build_component_calls
 
 Route = Literal["direct", "risk_data"]
@@ -28,6 +32,9 @@ GraphNode = Literal["direct_response", "run_risk"]
 APP_AGENT_NAME = "default"
 APP_TITLE = "Risk Exposure Generative UI Agent"
 APPROVAL_COMMAND_PREFIX = "approve"
+APPROVAL_REJECT_PREFIX = "reject"
+APPROVAL_REVISE_PREFIX = "revise"
+APPROVAL_TTL_MINUTES = 15
 FOUNDRY_CONVERSATION_KEY = CONVERSATION_ID_KEY
 
 NODE_SUPERVISE = "supervise_request"
@@ -49,7 +56,33 @@ answers concise.
 load_dotenv()
 settings = load_settings()
 foundry_client = FoundryAgentClient(settings)
-pending_data_approvals: dict[str, str] = {}
+
+ApprovalAction = Literal["approve", "reject", "revise"]
+ApprovalStatus = Literal["pending", "used", "rejected", "expired"]
+
+
+@dataclass
+class ApprovalCommand:
+    action: ApprovalAction
+    request_id: str
+    revised_question: str | None = None
+
+
+@dataclass
+class PendingApproval:
+    request_id: str
+    question: str
+    purpose: str
+    created_at: datetime
+    expires_at: datetime
+    audit_id: str
+    status: ApprovalStatus = "pending"
+
+    def is_expired(self, now: datetime | None = None) -> bool:
+        return (now or datetime.now(timezone.utc)) >= self.expires_at
+
+
+pending_data_approvals: dict[str, PendingApproval] = {}
 
 
 class AgentState(TypedDict, total=False):
@@ -81,11 +114,31 @@ def _state_update(messages: list[AnyMessage], conversation_id: str | None = None
     return update
 
 
+def _approval_command(message: str) -> ApprovalCommand | None:
+    approve_match = re.fullmatch(rf"{APPROVAL_COMMAND_PREFIX}\s+([A-Za-z0-9_-]+)\.?", message.strip())
+    if approve_match:
+        return ApprovalCommand(action="approve", request_id=approve_match.group(1))
+
+    reject_match = re.fullmatch(rf"{APPROVAL_REJECT_PREFIX}\s+([A-Za-z0-9_-]+)\.?", message.strip())
+    if reject_match:
+        return ApprovalCommand(action="reject", request_id=reject_match.group(1))
+
+    revise_match = re.fullmatch(rf"{APPROVAL_REVISE_PREFIX}\s+([A-Za-z0-9_-]+)\s*:\s*(.+)", message.strip(), re.DOTALL)
+    if revise_match:
+        revised_question = revise_match.group(2).strip()
+        if revised_question:
+            return ApprovalCommand(action="revise", request_id=revise_match.group(1), revised_question=revised_question)
+    return None
+
+
 def _approval_token(message: str) -> str | None:
-    if not message.startswith(APPROVAL_COMMAND_PREFIX):
-        return None
-    token = message.removeprefix(APPROVAL_COMMAND_PREFIX).strip().strip(".")
-    return token or None
+    command = _approval_command(message)
+    return command.request_id if command and command.action == "approve" else None
+
+
+def _simple_direct_greeting(message: str) -> bool:
+    normalized = re.sub(r"[^a-záéíóúüñ]+", " ", message.lower()).strip()
+    return normalized in {"hi", "hello", "hey", "hola", "buenas", "buenos dias", "buenas tardes", "buenas noches"}
 
 
 def _previous_unapproved_user_message(messages: Sequence[AnyMessage]) -> str | None:
@@ -93,15 +146,25 @@ def _previous_unapproved_user_message(messages: Sequence[AnyMessage]) -> str | N
         if not isinstance(message, HumanMessage) and getattr(message, "type", None) != "human":
             continue
         text = _message_text(message)
-        if not _approval_token(text):
+        if not _approval_command(text):
             return text
     return None
 
 
 def _approval_request(question: str) -> list[AnyMessage]:
     request_id = uuid.uuid4().hex[:10]
-    pending_data_approvals[request_id] = question
+    now = datetime.now(timezone.utc)
+    purpose = "Send the question to the Foundry agent to query exposure, claims, brokers or overdue balances."
+    pending_data_approvals[request_id] = PendingApproval(
+        request_id=request_id,
+        question=question,
+        purpose=purpose,
+        created_at=now,
+        expires_at=now + timedelta(minutes=APPROVAL_TTL_MINUTES),
+        audit_id=f"approval-{uuid.uuid4().hex[:12]}",
+    )
     tool_call_id = f"mcpApprovalCard-{request_id}"
+    approval = pending_data_approvals[request_id]
     return [
         AIMessage(content="Approval required before querying governed data."),
         AIMessage(
@@ -114,8 +177,12 @@ def _approval_request(question: str) -> list[AnyMessage]:
                         "requestId": request_id,
                         "question": question,
                         "dataSource": "Databricks Genie Space Risk Exposure through Azure AI Foundry MCP",
-                        "purpose": "Send the question to the Foundry agent to query exposure, claims, brokers or overdue balances.",
+                        "purpose": purpose,
                         "approvalCommand": f"{APPROVAL_COMMAND_PREFIX} {request_id}",
+                        "rejectCommand": f"{APPROVAL_REJECT_PREFIX} {request_id}",
+                        "reviseCommandPrefix": f"{APPROVAL_REVISE_PREFIX} {request_id}:",
+                        "expiresAt": approval.expires_at.isoformat().replace("+00:00", "Z"),
+                        "auditId": approval.audit_id,
                     },
                 }
             ],
@@ -124,17 +191,54 @@ def _approval_request(question: str) -> list[AnyMessage]:
     ]
 
 
+def _resolve_approved_question(command: ApprovalCommand, messages: Sequence[AnyMessage]) -> str | None:
+    approval = pending_data_approvals.get(command.request_id)
+    if approval is None:
+        return _previous_unapproved_user_message(messages) if command.action == "approve" else None
+    if approval.status != "pending":
+        return None
+    if approval.is_expired():
+        approval.status = "expired"
+        return None
+    if command.action == "reject":
+        approval.status = "rejected"
+        return None
+    approval.status = "used"
+    if command.action == "revise" and command.revised_question:
+        return command.revised_question
+    return approval.question
+
+
 def _approved_question(approval_token: str, messages: Sequence[AnyMessage]) -> str | None:
-    return pending_data_approvals.pop(approval_token, None) or _previous_unapproved_user_message(messages)
+    return _resolve_approved_question(ApprovalCommand(action="approve", request_id=approval_token), messages)
 
 
-def _render_component_messages(question: str, response: FoundryAgentResponse, app_settings: Settings) -> list[AnyMessage]:
+def _component_message(name: str, args: dict[str, Any]) -> list[AnyMessage]:
+    tool_call_id = f"{name}-{uuid.uuid4().hex[:8]}"
+    return [
+        AIMessage(content="", tool_calls=[{"id": tool_call_id, "name": name, "args": args}]),
+        ToolMessage(content="rendered", tool_call_id=tool_call_id),
+    ]
+
+
+
+def _render_component_messages(
+    question: str,
+    response: FoundryAgentResponse,
+    app_settings: Settings,
+    approval_request_id: str | None = None,
+    trace_id: str | None = None,
+) -> list[AnyMessage]:
     messages: list[AnyMessage] = []
-    calls = build_component_calls(question, response.answer, app_settings.databricks_sql_warehouse_name)
+    calls = build_component_calls(
+        question,
+        response.answer,
+        app_settings.databricks_sql_warehouse_name,
+        approval_request_id=approval_request_id,
+        trace_id=trace_id,
+    )
     for call in calls:
-        tool_call_id = f"{call.name}-{uuid.uuid4().hex[:8]}"
-        messages.append(AIMessage(content="", tool_calls=[{"id": tool_call_id, "name": call.name, "args": call.args}]))
-        messages.append(ToolMessage(content="rendered", tool_call_id=tool_call_id))
+        messages.extend(_component_message(call.name, call.args))
     return messages
 
 
@@ -142,12 +246,10 @@ def _safe_error_message(prefix: str, exc: Exception) -> AIMessage:
     return AIMessage(content=f"{prefix} Safe technical detail: {type(exc).__name__}: {exc}")
 
 
-async def _emit_progress(message: str) -> None:
+async def _emit_ui_event(kind: UiEventKind, phase: UiEventPhase, payload: dict[str, Any]) -> None:
+    event = build_ui_event(kind, phase, payload)
     with suppress(RuntimeError):
-        await adispatch_custom_event(
-            "manually_emit_message",
-            {"message_id": f"progress-{uuid.uuid4().hex[:8]}", "message": message},
-        )
+        await adispatch_custom_event("risk_ui_event", event.to_payload())
 
 
 async def supervise_request(state: AgentState) -> dict[str, Any]:
@@ -155,13 +257,34 @@ async def supervise_request(state: AgentState) -> dict[str, Any]:
     question = _last_user_message(messages)
     if not question:
         return {"route": "direct"}
-    if _approval_token(question):
+    if _approval_command(question):
         return {"route": "risk_data"}
+    if _simple_direct_greeting(question):
+        await _emit_ui_event(
+            "reasoning.completed",
+            "supervise",
+            {"message": "Greeting detected. Answering directly without governed data.", "route": "direct"},
+        )
+        return {"route": "direct"}
 
+    await _emit_ui_event(
+        "reasoning.started",
+        "supervise",
+        {"message": "Thinking about whether this needs governed risk data…"},
+    )
     decision: RouteDecision = await asyncio.to_thread(
         foundry_client.supervise,
         messages,
         bool(_conversation_id(state)),
+    )
+    await _emit_ui_event(
+        "reasoning.completed",
+        "supervise",
+        {
+            "message": f"Route selected: {'governed data flow' if decision.route == 'risk_data' else 'direct response'}.",
+            "route": decision.route,
+            "rationale": decision.rationale,
+        },
     )
     return {"route": decision.route}
 
@@ -193,17 +316,29 @@ async def direct_response(state: AgentState) -> dict[str, Any]:
         )
 
 
-async def _execute_risk_query(question: str, conversation_id: str | None) -> dict[str, Any]:
-    await _emit_progress("Approval received. Continuing the Azure AI Foundry conversation…")
-    await _emit_progress("Foundry will use its active conversation and call Genie only if new governed data is required.")
+async def _execute_risk_query(question: str, conversation_id: str | None, approval_request_id: str | None = None) -> dict[str, Any]:
+    await _emit_ui_event(
+        "query.started",
+        "query",
+        {"message": "Approval received. Continuing the Azure AI Foundry conversation…", "question": question},
+    )
+    await _emit_ui_event(
+        "normalization.started",
+        "normalize",
+        {"message": "Foundry will use its active conversation and call Genie only if new governed data is required."},
+    )
 
-    messages: list[AnyMessage] = [AIMessage(content="Query authorized. I have prepared the governed data analysis flow.")]
+    messages: list[AnyMessage] = []
+    trace_id = f"risk-{uuid.uuid4().hex[:12]}"
     try:
         response = await asyncio.to_thread(foundry_client.ask, question, conversation_id)
-        messages.extend(_render_component_messages(question, response, settings))
+        await _emit_ui_event("query.completed", "query", {"message": "Governed query completed.", "traceId": trace_id})
+        messages.extend(_render_component_messages(question, response, settings, approval_request_id, trace_id))
+        await _emit_ui_event("visualization.rendered", "visualize", {"message": "Controlled visualizations rendered."})
         messages.append(AIMessage(content="I used the real Genie result through the active Foundry conversation to compose the view."))
         conversation_id = response.conversation_id or conversation_id
     except Exception as exc:
+        await _emit_ui_event("error.safe", "error", {"message": "Foundry/Genie query failed safely.", "errorType": type(exc).__name__})
         messages.append(
             _safe_error_message(
                 "I could not complete the real query against Foundry/Genie. Check Azure CLI authentication, Databricks permissions and SQL Warehouse availability.",
@@ -222,18 +357,27 @@ async def run_risk(state: AgentState) -> dict[str, Any]:
             [AIMessage(content="What would you like to analyze about exposure, claims, brokers or overdue balances?")], conversation_id
         )
 
-    approval_token = _approval_token(question)
-    if approval_token:
-        question = _approved_question(approval_token, input_messages) or ""
-        if not question:
+    approval_request_id: str | None = None
+    approval_command = _approval_command(question)
+    if approval_command:
+        approval_request_id = approval_command.request_id
+        approved_question = _resolve_approved_question(approval_command, input_messages)
+        if approval_command.action == "reject":
+            return _state_update([AIMessage(content="Data access request rejected. I did not query Genie.")], conversation_id)
+        if not approved_question:
             return _state_update(
-                [AIMessage(content="I cannot find that approval request. Run the query again to generate a valid authorization.")],
+                [
+                    AIMessage(
+                        content="I cannot use that approval request. It may be missing, expired, rejected or already used. Run the query again to generate a valid authorization."
+                    )
+                ],
                 conversation_id,
             )
+        question = approved_question
     elif settings.require_human_data_approval:
         return _state_update(_approval_request(question), conversation_id)
 
-    return await _execute_risk_query(question, conversation_id)
+    return await _execute_risk_query(question, conversation_id, approval_request_id)
 
 
 def build_agent_graph() -> Any:
