@@ -11,7 +11,7 @@ Minimum path to use the local frontend:
 ## 0. Prerequisites
 
 - Azure CLI authenticated with `az login`.
-- Permission to create a resource group and deploy Azure Databricks, Microsoft Foundry, Key Vault, Azure Container Registry, Log Analytics, and Application Insights.
+- Permission to create a resource group and deploy Azure Databricks, Microsoft Foundry, Key Vault, Azure Container Registry, Log Analytics, Application Insights, and optionally Azure App Service for the frontend.
 - Permission to create Azure RBAC role assignments at the deployment scope. Use `Role Based Access Control Administrator` or `User Access Administrator` for least privilege; `Owner` also works but is broader.
 - Foundry developer permissions to create project connections and agent versions. `Foundry User` is enough for development actions; use `Foundry Project Manager` only when you also need to invite/manage project collaborators.
 - Foundry/OpenAI model quota for a deployment such as `gpt-5.4`, or an existing deployment you can reference if you disable model creation in Bicep.
@@ -76,6 +76,7 @@ The Bicep deployment creates:
 - Key Vault with RBAC authorization for future secret references.
 - User-assigned managed identity for app/agent runtime use.
 - Azure Container Registry for the Foundry Hosted Agent image.
+- Optional Azure App Service plan and Linux Web App for the Next.js frontend when `deployFrontendApp = true`.
 - Log Analytics workspace and workspace-based Application Insights for agent telemetry, connected to the Foundry account and project so prompt and hosted agent traces can flow to the Foundry Traces experience.
 
 It intentionally does not create Databricks data-plane objects such as SQL Warehouses or Genie Spaces. By default `infra/main.demo.bicepparam` expects an existing Databricks workspace; replace `existingDatabricksResourceGroupName` and `existingDatabricksWorkspaceName` with your values, or set `deployDatabricksWorkspace = true` if you want a fresh workspace. If Foundry model capacity is unavailable in your selected region, set `deployFoundryModel = false` and use an existing model deployment.
@@ -93,6 +94,9 @@ export APPLICATIONINSIGHTS_CONNECTION_STRING="<applicationInsightsConnectionStri
 export KEY_VAULT_URI="<keyVaultUri>"
 export AZURE_CONTAINER_REGISTRY_NAME="<containerRegistryName>"
 export AZURE_CONTAINER_REGISTRY_LOGIN_SERVER="<containerRegistryLoginServer>"
+# Present only when deployFrontendApp = true.
+export FRONTEND_WEB_APP_NAME="<frontendWebAppName>"
+export FRONTEND_WEB_APP_URL="<frontendWebAppUrl>"
 ```
 
 ## 3. Create or reuse a Databricks SQL Warehouse
@@ -219,7 +223,59 @@ export AG_UI_AGENT_SCOPE="https://ai.azure.com/.default"
 
 Validate with a safe prompt first, then use the normal approval card before any governed Genie query. After validation, check Foundry Traces or Application Insights for both `risk-exposure-genie-agent` and `risk-exposure-ag-ui-hosted`. Useful workspace-based Application Insights tables are `AppRequests`, `AppDependencies`, `AppTraces`, and `AppGenAIContent`. Keep Databricks compute stopped when the demo is idle.
 
-## 11. Stop compute after setup or demo
+## 11. Optional: deploy the Next.js frontend to Azure App Service
+
+Use this only when you want the browser-facing Next.js app hosted in Azure instead of on your laptop. This adds an App Service plan and Linux Web App, so expect ongoing App Service cost until you delete or scale down the resource.
+
+Complete step 10 first and copy the Foundry Hosted Agent Invocations endpoint. Then edit `infra/main.demo.bicepparam`:
+
+```bicep
+param deployFrontendApp = true
+param frontendAgUiAgentUrl = 'https://<hosted-agent-invocations-endpoint>'
+// Optional cost/performance override; keep tier aligned with the SKU.
+param frontendAppServicePlanSkuName = 'B1'
+param frontendAppServicePlanSkuTier = 'Basic'
+```
+
+Deploy the infrastructure change. `deploy-infra.sh` runs `what-if` first and asks for confirmation before applying changes:
+
+```bash
+source .risk.env.local
+./scripts/deploy-infra.sh
+```
+
+Copy the new outputs into `.risk.env.local`:
+
+```bash
+export FRONTEND_WEB_APP_NAME="<frontendWebAppName>"
+export FRONTEND_WEB_APP_URL="<frontendWebAppUrl>"
+```
+
+Build and publish a precompiled standalone Next.js package. This keeps App Service from running a remote Oryx build during deployment:
+
+```bash
+npm run build:web
+rm -rf /tmp/risk-frontend-standalone /tmp/risk-frontend.zip
+mkdir -p /tmp/risk-frontend-standalone/apps/web/.next
+cp -R apps/web/.next/standalone/. /tmp/risk-frontend-standalone/
+cp -R apps/web/.next/static /tmp/risk-frontend-standalone/apps/web/.next/static
+if [ -d apps/web/public ]; then
+  cp -R apps/web/public /tmp/risk-frontend-standalone/apps/web/public
+fi
+(
+  cd /tmp/risk-frontend-standalone
+  zip -qr /tmp/risk-frontend.zip .
+)
+az webapp deploy \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$FRONTEND_WEB_APP_NAME" \
+  --src-path /tmp/risk-frontend.zip \
+  --type zip
+```
+
+Open `$FRONTEND_WEB_APP_URL` and validate with a safe prompt before any governed Genie query. The web app uses its system-assigned managed identity to request `https://ai.azure.com/.default` tokens; the Bicep role assignment grants that identity Foundry invoke access at the Foundry account scope when `deployFrontendApp = true`.
+
+## 12. Stop compute after setup or demo
 
 ```bash
 ./scripts/stop-compute.sh

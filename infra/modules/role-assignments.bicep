@@ -4,6 +4,9 @@ param runtimePrincipalId string
 @description('Foundry project system-assigned managed identity principal ID.')
 param foundryProjectPrincipalId string
 
+@description('Optional frontend App Service system-assigned managed identity principal ID. Leave empty when the frontend App Service is not deployed.')
+param frontendPrincipalId string = ''
+
 @description('Key Vault resource ID.')
 param keyVaultResourceId string
 
@@ -98,5 +101,15 @@ resource foundryProjectKeyVaultSecretsUser 'Microsoft.Authorization/roleAssignme
     principalId: foundryProjectPrincipalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: keyVaultSecretsUserRoleId
+  }
+}
+
+resource frontendFoundryCognitiveServicesUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(frontendPrincipalId)) {
+  name: guid(foundryAccount.id, frontendPrincipalId, 'frontend-foundry-cognitive-services-user')
+  scope: foundryAccount
+  properties: {
+    principalId: frontendPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: cognitiveServicesUserRoleId
   }
 }

@@ -43,6 +43,18 @@ param databricksPublicNetworkAccess string = 'Enabled'
 ])
 param foundryPublicNetworkAccess string = 'Enabled'
 
+@description('Deploy an Azure App Service resource for the Next.js frontend. Disabled by default to avoid adding idle cost to local-only demos.')
+param deployFrontendApp bool = false
+
+@description('Foundry Hosted Agent Invocations endpoint used by the deployed frontend. Leave empty until the hosted agent exists, then update app settings or redeploy.')
+param frontendAgUiAgentUrl string = ''
+
+@description('App Service plan SKU name for the optional frontend.')
+param frontendAppServicePlanSkuName string = 'B1'
+
+@description('App Service plan SKU tier for the optional frontend.')
+param frontendAppServicePlanSkuTier string = 'Basic'
+
 @description('Whether to deploy the default Foundry model. Disable if capacity or quota is unavailable and use an existing deployment instead.')
 param deployFoundryModel bool = true
 
@@ -85,6 +97,8 @@ var identityName = 'id-${safeWorkload}-${environmentName}-${suffix}'
 var containerRegistryName = take('cr${safeWorkload}${environmentName}${suffix}', 50)
 var foundryAccountName = 'aif-${safeWorkload}-${environmentName}-${suffix}'
 var foundryProjectName = take('proj-${safeWorkload}-${environmentName}', 64)
+var frontendAppServicePlanName = 'asp-${safeWorkload}-${environmentName}-${suffix}'
+var frontendWebAppName = take('app-${safeWorkload}-${environmentName}-${suffix}', 60)
 var existingDatabricksScopeName = empty(existingDatabricksResourceGroupName) ? resourceGroup().name : existingDatabricksResourceGroupName
 
 module analytics './modules/databricks.bicep' = if (deployDatabricksWorkspace) {
@@ -171,11 +185,26 @@ module foundry './modules/foundry.bicep' = {
   }
 }
 
+module frontend './modules/frontend-app.bicep' = if (deployFrontendApp) {
+  name: 'risk-frontend-app'
+  params: {
+    location: location
+    appServicePlanName: frontendAppServicePlanName
+    webAppName: frontendWebAppName
+    appServicePlanSkuName: frontendAppServicePlanSkuName
+    appServicePlanSkuTier: frontendAppServicePlanSkuTier
+    agUiAgentUrl: frontendAgUiAgentUrl
+    applicationInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
+    tags: tags
+  }
+}
+
 module roleAssignments './modules/role-assignments.bicep' = {
   name: 'risk-agent-role-assignments'
   params: {
     runtimePrincipalId: identity.outputs.principalId
     foundryProjectPrincipalId: foundry.outputs.projectPrincipalId
+    frontendPrincipalId: deployFrontendApp ? frontend!.outputs.webAppPrincipalId : ''
     keyVaultResourceId: keyVault.outputs.keyVaultResourceId
     foundryAccountResourceId: foundry.outputs.accountResourceId
     containerRegistryResourceId: containerRegistry.outputs.registryResourceId
@@ -200,6 +229,9 @@ output runtimeIdentityClientId string = identity.outputs.clientId
 output runtimeIdentityResourceId string = identity.outputs.identityResourceId
 output containerRegistryName string = containerRegistry.outputs.registryName
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
+output frontendWebAppName string = deployFrontendApp ? frontend!.outputs.webAppName : ''
+output frontendWebAppUrl string = deployFrontendApp ? 'https://${frontend!.outputs.webAppDefaultHostName}' : ''
+output frontendWebAppPrincipalId string = deployFrontendApp ? frontend!.outputs.webAppPrincipalId : ''
 output foundryAccountName string = foundry.outputs.accountName
 output foundryEndpoint string = foundry.outputs.endpoint
 output foundryProjectName string = foundry.outputs.projectName

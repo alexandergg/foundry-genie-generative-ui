@@ -77,7 +77,7 @@ This separation keeps the UI orchestration and the governed analytics tool bound
 apps/
   web/                 # Next.js + CopilotKit + controlled Generative UI components
   agent/               # AG-UI/LangGraph bridge plus Foundry Hosted Agent invocations entrypoint
-infra/                 # Azure Bicep for Foundry, Key Vault, ACR, monitoring, and optional Databricks
+infra/                 # Azure Bicep for Foundry, Key Vault, ACR, monitoring, optional Databricks, and optional frontend App Service
 databricks/sql/        # Synthetic Risk Exposure demo dataset and business-facing view
 scripts/               # Azure, Databricks, Genie, Foundry, validation, and cost-control scripts
 docs/                  # Step-by-step setup, local runbook, demo script, and operations notes
@@ -95,8 +95,8 @@ This is a **live Azure demo**, not an offline mock. The frontend can run locally
    - **Recommended demo path:** deploy the AG-UI runtime as a Foundry Hosted Agent, then run only the frontend locally.
    - **Developer path:** run the AG-UI/FastAPI bridge locally; it still calls the deployed Foundry prompt agent and Databricks Genie.
 
-3. **Run the frontend locally**
-   Follow [docs/local-development.md](docs/local-development.md) to configure `apps/web/.env.local`, authenticate with Azure CLI, and start the Next.js app.
+3. **Run or deploy the frontend**
+   Follow [docs/local-development.md](docs/local-development.md) to configure `apps/web/.env.local`, authenticate with Azure CLI, and start the Next.js app. If you want the frontend hosted in Azure too, enable the optional App Service resource in `infra/main.demo.bicepparam` and follow [docs/azure-setup.md](docs/azure-setup.md#11-optional-deploy-the-nextjs-frontend-to-azure-app-service).
 
 4. **Run the live demo**
    Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates approval, conversational memory, traces, and rich visual components.
