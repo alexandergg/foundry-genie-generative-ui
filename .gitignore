@@ -36,3 +36,6 @@ apps/agent/.env
 .DS_Store
 .vscode/
 .idea/
+
+# Internal workflow artifacts (not for public repo)
+docs/superpowers/
