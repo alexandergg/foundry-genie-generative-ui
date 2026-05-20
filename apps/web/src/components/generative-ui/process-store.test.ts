@@ -50,6 +50,13 @@ describe("process-store", () => {
     expect(steps[1].status).toBe("active");
   });
 
+  it("marks a terminal-kind event complete on arrival", () => {
+    startRun();
+    applyUiEvent(envelope("query.completed", "query"));
+    const [step] = getProcessSnapshot().steps;
+    expect(step.status).toBe("complete");
+  });
+
   it("marks the run errored on error.safe", () => {
     startRun();
     applyUiEvent(envelope("error.safe", "error", "Failed safely"));

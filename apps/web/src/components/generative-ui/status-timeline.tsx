@@ -4,12 +4,7 @@ import type { ProcessStep } from "./process-store";
 const PHASE_LABELS: Record<DashboardPhase, string> = {
   idle: "Waiting",
   planning: "Planning",
-  approval: "Approval",
-  querying: "Querying",
-  normalizing: "Normalizing",
-  rendering: "Rendering",
   ready: "Ready",
-  error: "Needs attention",
 };
 
 export function formatDashboardPhase(phase: DashboardPhase) {

@@ -183,3 +183,8 @@ cleanup is auditable, not silent.
 - Backend: `pytest` 35 passed.
 - Legacy grep clean on both `apps/web/src` and `apps/agent`.
 - Manual browser smoke test pending (run by the user with the agent live).
+
+**Decisions worth noting**
+- `ProcessTrace` is rendered as a flex-column header above `CopilotChat` inside `.chat-wrap` (not interleaved per-message). For the single-active-run demo this reliably places the streaming Thinking card at the top of the current turn and avoids fighting CopilotChat's internal message ordering; it reflects the current/last run and collapses ~900ms after completion.
+- `DashboardPhase` was narrowed to the reachable set `idle | planning | ready` after the timeline moved to `process-store`; the dead phase values and their `.dashboard-state.*` CSS were removed. The dead `VisualMeta` export (never consumed) was also dropped.
+- Post-review follow-ups intentionally NOT done here (out of scope / pre-existing): pruning the test-only `_approved_question`/`_approval_token` helpers in the agent, bounding the `pending_data_approvals` dict, and emitting the 7 reserved-but-unused `risk_ui_event` kinds.

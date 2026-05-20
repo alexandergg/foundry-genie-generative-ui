@@ -23,7 +23,7 @@ export type DashboardVisual =
   | { id: string; type: "warehouseStatusCard"; props: WarehouseStatusCardProps }
   | { id: string; type: "policyBreachCard"; props: PolicyBreachCardProps };
 
-export type DashboardPhase = "idle" | "planning" | "approval" | "querying" | "normalizing" | "rendering" | "ready" | "error";
+export type DashboardPhase = "idle" | "planning" | "ready";
 
 export type DashboardState = {
   phase: DashboardPhase;
