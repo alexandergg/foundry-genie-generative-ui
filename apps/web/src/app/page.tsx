@@ -5,6 +5,8 @@ import { DatabricksGenieMark } from "@/components/databricks-genie-mark";
 import { DashboardStage } from "@/components/generative-ui/dashboard-stage";
 import { useRiskGenerativeUI } from "@/hooks/use-risk-generative-ui";
 import { useRiskUiEvents } from "@/hooks/use-risk-ui-events";
+import { useDashboardReadable } from "@/hooks/use-dashboard-readable";
+import { useDashboardTools } from "@/hooks/use-dashboard-tools";
 
 const SIDEBAR_WIDTH = 460;
 
@@ -34,6 +36,8 @@ function GenieWelcomeMessage() {
 export default function HomePage() {
   useRiskGenerativeUI();
   useRiskUiEvents();
+  useDashboardReadable();
+  useDashboardTools();
   useConfigureSuggestions({ suggestions: starterSuggestions, available: "before-first-message" }, []);
 
   return (
