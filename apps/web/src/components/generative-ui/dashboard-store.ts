@@ -1,41 +1,21 @@
-import { DASHBOARD_VISUAL_PRIORITY } from "./registry";
-import type {
-  BarChartCardProps,
-  DonutChartCardProps,
-  InsightTableProps,
-  KpiStripProps,
-  LineAreaChartCardProps,
-  MetricComparisonChartCardProps,
-  PolicyBreachCardProps,
-  RiskNarrativeCardProps,
-  VisualizationPlanProps,
-  WarehouseStatusCardProps,
-} from "./types";
-
-export type DashboardVisual =
-  | { id: string; type: "kpiStrip"; props: KpiStripProps }
-  | { id: string; type: "barChartCard"; props: BarChartCardProps }
-  | { id: string; type: "lineAreaChartCard"; props: LineAreaChartCardProps }
-  | { id: string; type: "donutChartCard"; props: DonutChartCardProps }
-  | { id: string; type: "metricComparisonChartCard"; props: MetricComparisonChartCardProps }
-  | { id: string; type: "insightTable"; props: InsightTableProps }
-  | { id: string; type: "riskNarrativeCard"; props: RiskNarrativeCardProps }
-  | { id: string; type: "warehouseStatusCard"; props: WarehouseStatusCardProps }
-  | { id: string; type: "policyBreachCard"; props: PolicyBreachCardProps };
+import type { VisualSpec, DerivableVisualType } from "./dataset-types";
 
 export type DashboardPhase = "idle" | "planning" | "ready";
 
 export type DashboardState = {
   phase: DashboardPhase;
-  plan?: VisualizationPlanProps;
-  visuals: DashboardVisual[];
+  visuals: VisualSpec[];
 };
 
-let dashboardState: DashboardState = { phase: "idle", visuals: [] };
+let state: DashboardState = { phase: "idle", visuals: [] };
 const listeners = new Set<() => void>();
 
 function emit() {
-  listeners.forEach((listener) => listener());
+  listeners.forEach((l) => l());
+}
+
+function sortByOrder(v: VisualSpec[]): VisualSpec[] {
+  return [...v].sort((a, b) => a.order - b.order);
 }
 
 export function subscribeDashboard(listener: () => void) {
@@ -45,23 +25,51 @@ export function subscribeDashboard(listener: () => void) {
   };
 }
 
-export function getDashboardSnapshot() {
-  return dashboardState;
+export function getDashboardSnapshot(): DashboardState {
+  return state;
 }
 
-export function setDashboardPlanning(plan?: VisualizationPlanProps) {
-  dashboardState = { phase: "planning", plan, visuals: [] };
+export function setDashboardPlanning() {
+  state = { phase: "planning", visuals: [] };
   emit();
 }
 
-export function publishDashboardVisual(visual: DashboardVisual) {
-  const withoutCurrent = dashboardState.visuals.filter((item) => item.id !== visual.id);
-  dashboardState = {
-    ...dashboardState,
-    phase: "ready",
-    visuals: [...withoutCurrent, visual].sort(
-      (a, b) => DASHBOARD_VISUAL_PRIORITY[a.type] - DASHBOARD_VISUAL_PRIORITY[b.type],
-    ),
+export function addVisual(spec: VisualSpec) {
+  const rest = state.visuals.filter((v) => v.id !== spec.id);
+  state = { phase: "ready", visuals: sortByOrder([...rest, spec]) };
+  emit();
+}
+
+export function removeVisual(id: string) {
+  state = { ...state, visuals: state.visuals.filter((v) => v.id !== id) };
+  emit();
+}
+
+export function changeVisualType(id: string, type: DerivableVisualType) {
+  state = { ...state, visuals: state.visuals.map((v) => (v.id === id ? { ...v, type } : v)) };
+  emit();
+}
+
+export function reorderVisuals(orderedIds: string[]) {
+  const index = new Map(orderedIds.map((id, i) => [id, i]));
+  state = {
+    ...state,
+    visuals: [...state.visuals].sort((a, b) => (index.get(a.id) ?? 0) - (index.get(b.id) ?? 0)).map((v, i) => ({ ...v, order: i })),
   };
+  emit();
+}
+
+export function removeVisualsForDataset(datasetId: string) {
+  state = { ...state, visuals: state.visuals.filter((v) => v.datasetId !== datasetId) };
+  emit();
+}
+
+export function clearDashboard() {
+  state = { phase: "idle", visuals: [] };
+  emit();
+}
+
+export function resetDashboardStore() {
+  state = { phase: "idle", visuals: [] };
   emit();
 }
