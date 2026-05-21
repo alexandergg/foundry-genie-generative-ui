@@ -22,12 +22,13 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
 from src.config import load_settings
-from src.foundry_agent_client import CONVERSATION_ID_KEY, FoundryAgentClient, FoundryAgentResponse, RouteDecision
+from src.dashboard_context import extract_dashboard_context
+from src.foundry_agent_client import CONVERSATION_ID_KEY, DashboardOpDecision, FoundryAgentClient, FoundryAgentResponse, RouteDecision
 from src.ui_event_contract import UiEventKind, UiEventPhase, build_ui_event
 from src.visualization_mapper import build_dataset_calls
 
-Route = Literal["direct", "risk_data"]
-GraphNode = Literal["direct_response", "run_risk"]
+Route = Literal["direct", "dashboard_op", "risk_data"]
+GraphNode = Literal["direct_response", "dashboard_op", "run_risk"]
 
 APP_AGENT_NAME = "default"
 APP_TITLE = "Risk Exposure Generative UI Agent"
@@ -40,6 +41,7 @@ FOUNDRY_CONVERSATION_KEY = CONVERSATION_ID_KEY
 NODE_SUPERVISE = "supervise_request"
 NODE_DIRECT = "direct_response"
 NODE_RISK = "run_risk"
+NODE_DASHBOARD = "dashboard_op"
 
 HOSTED_AGENT_PROMPT = """
 You are Genie Risk Copilot, the hosted AG-UI orchestrator for this demo.
@@ -295,7 +297,49 @@ async def supervise_request(state: AgentState) -> dict[str, Any]:
 
 
 def route_supervisor_decision(state: AgentState) -> GraphNode:
-    return "run_risk" if state.get("route") == "risk_data" else "direct_response"
+    route = state.get("route")
+    if route == "risk_data":
+        return "run_risk"
+    if route == "dashboard_op":
+        return "dashboard_op"
+    return "direct_response"
+
+
+async def dashboard_op(state: AgentState) -> dict[str, Any]:
+    messages = state.get("messages", [])
+    question = _last_user_message(messages)
+    conversation_id = _conversation_id(state)
+    context = extract_dashboard_context(messages)
+
+    if not context["datasets"]:
+        return _state_update(
+            [AIMessage(content="There is no data on the dashboard yet. Ask a risk question first, then I can add or change visuals.")],
+            conversation_id,
+        )
+
+    await _emit_ui_event(
+        "reasoning.started",
+        "supervise",
+        {"message": "Updating the dashboard from already-retrieved data (no new Genie query)."},
+    )
+    try:
+        decision: DashboardOpDecision = await asyncio.to_thread(foundry_client.decide_dashboard_op, question, context)
+    except Exception as exc:
+        await _emit_ui_event("error.safe", "error", {"message": "Could not decide the dashboard update.", "errorType": type(exc).__name__})
+        return _state_update([_safe_error_message("I could not update the dashboard.", exc)], conversation_id)
+
+    if decision.tool == "none" or decision.tool not in {"addVisual", "removeVisual", "changeVisualType", "reorderVisuals", "clearDashboard"}:
+        return _state_update([AIMessage(content=decision.message or "I could not map that to a dashboard action.")], conversation_id)
+
+    await _emit_ui_event(
+        "visualization.proposed",
+        "visualize",
+        {"message": decision.message or f"Applying {decision.tool} to the dashboard."},
+    )
+    out_messages = _component_message(decision.tool, decision.args)
+    await _emit_ui_event("visualization.rendered", "visualize", {"message": "Dashboard updated from cached data."})
+    out_messages.append(AIMessage(content=decision.message or "Updated the dashboard from the data already retrieved."))
+    return _state_update(out_messages, conversation_id)
 
 
 async def direct_response(state: AgentState) -> dict[str, Any]:
@@ -412,14 +456,16 @@ def build_agent_graph() -> Any:
     graph_builder.add_node(NODE_SUPERVISE, supervise_request)
     graph_builder.add_node(NODE_DIRECT, direct_response)
     graph_builder.add_node(NODE_RISK, run_risk)
+    graph_builder.add_node(NODE_DASHBOARD, dashboard_op)
     graph_builder.add_edge(START, NODE_SUPERVISE)
     graph_builder.add_conditional_edges(
         NODE_SUPERVISE,
         route_supervisor_decision,
-        {NODE_DIRECT: NODE_DIRECT, NODE_RISK: NODE_RISK},
+        {NODE_DIRECT: NODE_DIRECT, NODE_RISK: NODE_RISK, NODE_DASHBOARD: NODE_DASHBOARD},
     )
     graph_builder.add_edge(NODE_DIRECT, END)
     graph_builder.add_edge(NODE_RISK, END)
+    graph_builder.add_edge(NODE_DASHBOARD, END)
     return graph_builder.compile(checkpointer=InMemorySaver())
 
 

@@ -15,8 +15,10 @@ PREVIOUS_RESPONSE_ID_KEY = "azure_ai_agents_previous_response_id"
 PENDING_TYPE_KEY = "azure_ai_agents_pending_type"
 MCP_APPROVAL_PENDING = "mcp_approval"
 
-Route = Literal["direct", "risk_data"]
+Route = Literal["direct", "dashboard_op", "risk_data"]
 FoundryAgentState = dict[str, Any]
+
+_DASHBOARD_OP_TOOLS = ("addVisual", "removeVisual", "changeVisualType", "reorderVisuals", "clearDashboard", "none")
 
 _TRANSCRIPT_MESSAGE_LIMIT = 8
 _TRANSCRIPT_TEXT_LIMIT = 1_200
@@ -37,6 +39,13 @@ class RouteDecision:
     route: Route
     direct_answer: str | None
     rationale: str
+
+
+@dataclass(frozen=True)
+class DashboardOpDecision:
+    tool: str
+    args: dict[str, Any]
+    message: str
 
 
 class FoundryAgentClient:
@@ -197,10 +206,13 @@ class FoundryAgentClient:
         return (
             "You are the routing supervisor for a LangGraph hosted agent. Decide the next node using the full conversation, "
             "the user's latest intent, and whether existing Foundry conversation context can answer the request. "
-            "Return only a valid JSON object with keys: route, rationale. route must be one of: direct, risk_data. "
+            "Return only a valid JSON object with keys: route, rationale. route must be one of: direct, dashboard_op, risk_data. "
+            "Use route=dashboard_op when the user wants to change the EXISTING dashboard using data already retrieved earlier in this "
+            "conversation: add another chart/table from the same data, remove a visual, change a visual's chart type, reorder, or clear "
+            "the dashboard. Do not pick dashboard_op when no governed data has been retrieved yet. "
             "Use route=risk_data only when the latest user request needs governed Databricks Genie data: retrieving, calculating, "
             "filtering, comparing, ranking, aggregating, or visualizing risk exposure, claims, brokers, overdue balances, countries, "
-            "quarters, risk classes, or a follow-up that needs new governed data. Use route=direct when the answer can be produced "
+            "quarters, risk classes, or a follow-up that needs new governed data not already retrieved. Use route=direct when the answer can be produced "
             "from normal conversation context, Foundry conversation context, previous Genie results already in the conversation, or general knowledge. "
             "Never call tools while making this routing decision. "
             f"{context_note}Conversation:\n{self._conversation_transcript(messages)}"
@@ -225,7 +237,7 @@ class FoundryAgentClient:
     def _parse_route_decision(self, text: str) -> RouteDecision:
         payload = self._json_object_from_text(text)
         route = payload.get("route")
-        if route not in {"direct", "risk_data"}:
+        if route not in {"direct", "dashboard_op", "risk_data"}:
             raise ValueError(f"Unsupported route: {route}")
         direct_answer = payload.get("direct_answer")
         return RouteDecision(
@@ -300,6 +312,45 @@ class FoundryAgentClient:
             return RouteDecision(route="risk_data", direct_answer=None, rationale="Supervisor attempted a governed tool call.")
         response = self._response_from_state(response_state, "Foundry supervisor did not return an AI message.")
         return self._parse_route_decision(response.answer)
+
+    @staticmethod
+    def _dashboard_op_prompt(question: str, context: dict[str, Any]) -> str:
+        return (
+            "You manipulate an existing analytics dashboard by choosing ONE client tool to call. "
+            "Use ONLY the cached datasets and on-screen visuals below — never request new governed data. "
+            "Return only a valid JSON object with keys: tool, args, message. "
+            "tool must be one of: addVisual, removeVisual, changeVisualType, reorderVisuals, clearDashboard, none. "
+            "For addVisual, args = {datasetId, type, dimension, measure, title}; pick `type` from "
+            "[barChartCard, lineAreaChartCard, donutChartCard, metricComparisonChartCard, insightTable]; use a dataset column with role=dimension "
+            "for `dimension` and one (or a list) with role=measure for `measure`. "
+            "For removeVisual args = {id}; for changeVisualType args = {id, type}; for reorderVisuals args = {orderedIds}; for clearDashboard args = {}. "
+            "Resolve fuzzy references (e.g. 'the donut', 'the broker chart') to a visual id using its type/title/dimension. "
+            "If several visuals match, set tool=none and put a short clarifying question in message. "
+            "If the request cannot be satisfied from the cached data, set tool=none and explain in message. "
+            "Always write `message` in the user's language as a short confirmation or explanation. "
+            f"Dashboard context (JSON): {json.dumps(context, ensure_ascii=False)}\n"
+            f"Latest user request: {question}"
+        )
+
+    def _parse_dashboard_op_decision(self, text: str) -> DashboardOpDecision:
+        payload = self._json_object_from_text(text)
+        tool = payload.get("tool")
+        if tool not in _DASHBOARD_OP_TOOLS:
+            return DashboardOpDecision(tool="none", args={}, message=str(payload.get("message") or "I could not map that to a dashboard action."))
+        args = payload.get("args")
+        return DashboardOpDecision(
+            tool=str(tool),
+            args=args if isinstance(args, dict) else {},
+            message=str(payload.get("message") or ""),
+        )
+
+    def decide_dashboard_op(self, question: str, context: dict[str, Any]) -> DashboardOpDecision:
+        state = self._invoke_agent_node(HumanMessage(content=self._dashboard_op_prompt(question, context)))
+        response = self._response_from_state(state, "Foundry did not return a dashboard-op decision.")
+        try:
+            return self._parse_dashboard_op_decision(response.answer)
+        except (ValueError, json.JSONDecodeError):
+            return DashboardOpDecision(tool="none", args={}, message=response.answer.strip()[:600] or "I could not parse a dashboard action.")
 
     def answer_direct(self, question: str, conversation_id: str | None = None) -> FoundryAgentResponse:
         state = self._invoke_agent_node(HumanMessage(content=self._direct_prompt(question)), conversation_id)
