@@ -136,8 +136,6 @@ h2 { margin: 0; font-size: clamp(18px, 2vw, 24px); letter-spacing: -0.035em; }
   box-shadow: 0 8px 22px rgba(20, 20, 19, 0.04);
 }
 .main-grid { max-width: 1320px; margin: 0 auto; }
-.split-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(440px, 0.95fr); gap: 16px; align-items: stretch; }
-.chat-card,
 .dashboard-card {
   min-height: 760px;
   overflow: hidden;
@@ -147,76 +145,19 @@ h2 { margin: 0; font-size: clamp(18px, 2vw, 24px); letter-spacing: -0.035em; }
   box-shadow: var(--shadow);
   backdrop-filter: blur(28px);
 }
-.side-chat { display: flex; flex-direction: column; }
-.official-copilot-shell { background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(247,244,237,.76)); }
-.chat-header,
 .dashboard-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px 12px; }
-.chat-brand { display: inline-flex; align-items: center; gap: 10px; color: #312f2b; letter-spacing: -0.01em; }
-.chat-brand-copy { display: grid; gap: 2px; line-height: 1.1; }
-.chat-brand-copy strong { font-size: 14px; font-weight: 720; }
-.chat-brand-copy small { color: var(--rg-muted); font-size: 11px; font-weight: 560; }
-.live-indicator,
 .dashboard-state { display: inline-flex; align-items: center; gap: 8px; color: var(--rg-muted); font-size: 12px; border: 1px solid var(--rg-border); border-radius: 999px; padding: 7px 10px; background: rgba(255,255,255,.62); }
-.live-indicator span { width: 7px; height: 7px; border-radius: 999px; background: var(--green); box-shadow: 0 0 0 5px rgba(25,169,116,.10); }
 .dashboard-state.planning { color: #6f4a08; background: rgba(245, 190, 92, .16); }
 .dashboard-state.ready { color: var(--green); background: rgba(25,169,116,.10); }
-.prompt-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 16px 14px; }
-.prompt-suggestion {
-  border: 1px solid rgba(31,30,26,.095);
-  border-radius: 14px;
-  padding: 10px 11px;
-  background: rgba(255,255,255,.72);
-  cursor: pointer;
-  color: #37352f;
-  text-align: left;
-  min-height: 42px;
-  font-size: 12px;
-  font-weight: 640;
-  box-shadow: 0 8px 20px rgba(20,20,19,.035);
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
-}
-.prompt-suggestion:hover { transform: translateY(-1px); border-color: rgba(91,70,255,.24); background: #fff; box-shadow: 0 12px 26px rgba(91,70,255,.10); }
-.chat-wrap { position: relative; flex: 1; min-height: 0; height: 675px; overflow: hidden; border-top: 1px solid rgba(31,30,26,.075); background: radial-gradient(circle at 50% 0%, rgba(91,70,255,.055), transparent 16rem), #fbfaf6; display: flex; flex-direction: column; }
-.chat-placeholder { position: absolute; inset: 0; display: grid; place-items: center; align-content: start; gap: 13px; pointer-events: none; z-index: 2; opacity: .94; text-align: center; padding: 82px 24px 230px; animation: introFade .7s ease both; }
 .genie-welcome-message { display: grid; place-items: center; gap: 13px; text-align: center; padding: 8px 0 4px; animation: introFade .7s ease both; }
 .genie-welcome-message p { margin: 0; max-width: 240px; color: var(--rg-muted); font-size: 13px; line-height: 1.45; }
 .chat-intro-logo { position: relative; display: grid; place-items: center; width: 76px; height: 76px; border: 1px solid rgba(255,54,33,.12); border-radius: 26px; background: radial-gradient(circle at 50% 35%, rgba(255,54,33,.11), transparent 58%), rgba(255,255,255,.66); box-shadow: 0 22px 58px rgba(255,54,33,.13); }
 .chat-intro-logo::before { content: ""; position: absolute; inset: -8px; border-radius: 34px; border: 1px solid rgba(255,54,33,.12); animation: breathe 2.6s ease-in-out infinite; }
 .chat-intro-logo .genie-mark svg { width: 50px; height: 50px; }
-.chat-placeholder p { margin: 0; max-width: 220px; color: var(--rg-muted); font-size: 13px; line-height: 1.45; }
 .chat-intro-pulses { display: inline-flex; gap: 6px; margin-top: 2px; }
 .chat-intro-pulses span { width: 7px; height: 7px; border-radius: 999px; background: rgba(255,54,33,.45); animation: typingPulse 1.25s ease-in-out infinite; }
 .chat-intro-pulses span:nth-child(2) { animation-delay: .16s; }
 .chat-intro-pulses span:nth-child(3) { animation-delay: .32s; }
-.chat-wrap .copilotKitChat,
-.chat-wrap .risk-copilot-chat-view { position: relative; z-index: 1; flex: 1; min-height: 0; background: transparent; }
-/* Bottom-anchor messages so a short conversation sits just above the input
-   instead of leaving a large void in the middle of the tall chat column.
-   margin-top:auto collapses to 0 once messages overflow, so scrolling is unaffected. */
-.chat-wrap .copilotKitMessages { display: flex; flex-direction: column; }
-.chat-wrap .copilotKitMessages > :first-child { margin-top: auto; }
-.chat-wrap .copilotKitWelcomeMessage,
-.chat-wrap .copilotKitDisclaimer { display: none !important; }
-.chat-wrap .copilotKitAssistantMessage > .cpk\:prose {
-  width: fit-content;
-  max-width: min(88%, 46rem);
-  border: 1px solid rgba(31,30,26,.085);
-  border-radius: 20px 20px 20px 8px;
-  padding: 13px 16px;
-  background: rgba(255,255,255,.90);
-  color: #2f2d28;
-  box-shadow: 0 10px 28px rgba(20,20,19,.045);
-  font-size: 15px;
-  line-height: 1.55;
-}
-.chat-wrap .copilotKitAssistantMessage > .cpk\:prose p { margin-block: 0; }
-.chat-wrap .copilotKitAssistantMessage > .cpk\:prose p + p { margin-top: .65rem; }
-.chat-wrap .copilotKitUserMessage > * { font-size: 15px; }
-/* margin-top:auto pins the input to the bottom of the (h-full, flex-col) chat
-   root, so an empty/short conversation doesn't leave a void below the input. */
-.chat-wrap .copilotKitInput { margin: auto 14px 14px; border: 1px solid rgba(31,30,26,.10); border-radius: 20px; background: rgba(255,255,255,.92); box-shadow: 0 18px 44px rgba(20,20,19,.08); font-size: 15px; }
-.chat-wrap .copilotKitInput textarea,
-.chat-wrap .copilotKitInput input { color: var(--text); }
 .dashboard-card { padding-bottom: 18px; }
 .dashboard-placeholder,
 .dashboard-loading,
@@ -383,23 +324,17 @@ tr:last-child td { border-bottom: 0; }
 .tool-chip-status { color: var(--rg-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
 .chat-cursor { display: inline-block; width: 8px; height: 16px; margin-left: 2px; border-radius: 2px; background: #5b46ff; vertical-align: text-bottom; animation: typingPulse 1s ease-in-out infinite; }
 
-@media (max-width: 1050px) {
-  .split-grid { grid-template-columns: 1fr; }
-  .side-chat { min-height: 680px; }
-}
 @media (max-width: 900px) {
   .minimal-hero { grid-template-columns: 1fr; }
   .status-pillbar { justify-content: flex-start; }
   .shell { padding: 16px; }
-  .chat-header, .dashboard-header { padding: 16px; }
-  .prompt-suggestions { padding: 0 16px 14px; }
+  .dashboard-header { padding: 16px; }
   .dashboard-skeletons { grid-template-columns: 1fr; }
   .donut-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .hero-copy { align-items: flex-start; }
-  .chat-card, .dashboard-card { border-radius: 24px; }
-  .chat-wrap { height: 680px; }
+  .dashboard-card { border-radius: 24px; }
   .status-pillbar { display: none; }
   .dashboard-placeholder { min-height: 500px; }
 }
