@@ -385,20 +385,48 @@ def build_dataset(question: str, answer: str, trace_id: str | None = None) -> di
         "question": question,
         "columns": columns,
         "rows": rows,
+        "answer": answer[:1800],
         "traceId": trace_id,
     }
 
 
+def _narrative_visual_call(dataset_id: str) -> ComponentCall:
+    """Executive summary card derived from the dataset's narrative answer."""
+    return ComponentCall(
+        "addVisual",
+        {"datasetId": dataset_id, "type": "riskNarrativeCard", "title": "Executive summary"},
+    )
+
+
 def build_dataset_calls(question: str, answer: str, trace_id: str | None = None) -> list[ComponentCall]:
-    """Cache the dataset once, then emit an initial set of derived-visual specs."""
+    """Cache the dataset once, then emit the executive summary plus derived-visual specs."""
     dataset = build_dataset(question, answer, trace_id)
     if dataset is None:
-        return [ComponentCall("riskNarrativeCard", {"title": "Executive summary", "answer": answer[:1800]})]
+        # No table behind the answer: cache a narrative-only dataset so the
+        # executive summary still renders as a dashboard card.
+        dataset_id = f"ds-{trace_id}" if trace_id else f"ds-{uuid.uuid4().hex[:12]}"
+        narrative_dataset = {
+            "id": dataset_id,
+            "title": question[:80] or "Genie result",
+            "question": question,
+            "columns": [],
+            "rows": [],
+            "answer": answer[:1800],
+            "traceId": trace_id,
+        }
+        return [
+            ComponentCall("cacheDataset", narrative_dataset),
+            _narrative_visual_call(dataset_id),
+        ]
 
     headers = [column["key"] for column in dataset["columns"]]
     label_key, value_key = _pick_keys(headers, dataset["rows"])
     numeric = [column["key"] for column in dataset["columns"] if column["role"] == "measure"]
-    calls: list[ComponentCall] = [ComponentCall("cacheDataset", dataset)]
+    # Executive summary first so it pins to the top of the dashboard.
+    calls: list[ComponentCall] = [
+        ComponentCall("cacheDataset", dataset),
+        _narrative_visual_call(dataset["id"]),
+    ]
 
     if label_key and value_key:
         calls.append(

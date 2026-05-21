@@ -183,6 +183,19 @@ h2 { margin: 0; font-size: clamp(18px, 2vw, 24px); letter-spacing: -0.035em; }
 .dashboard-visual.span-full { grid-column: 1 / -1; }
 .dashboard-visual .viz-card { margin: 0; height: 100%; }
 @media (max-width: 1180px) { .dashboard-grid { grid-template-columns: 1fr; } }
+.reasoning-disclosure { margin: 0 0 12px; border: 1px solid var(--rg-border); border-radius: 15px; background: rgba(255,255,255,.68); overflow: hidden; }
+.reasoning-disclosure.error { border-color: rgba(200,70,70,.32); }
+.reasoning-header { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.reasoning-header:hover { background: rgba(91,70,255,.04); }
+.reasoning-chevron { flex: none; width: 0; height: 0; border-left: 5px solid #9a978f; border-top: 4px solid transparent; border-bottom: 4px solid transparent; transition: transform .18s ease; }
+.reasoning-chevron.open { transform: rotate(90deg); }
+.reasoning-glyph { flex: none; width: 9px; height: 9px; border-radius: 999px; background: var(--rg-accent); box-shadow: 0 0 0 5px rgba(91,70,255,.10); }
+.reasoning-glyph.running { animation: breathe 1.3s ease-in-out infinite; }
+.reasoning-glyph.complete { background: var(--green); box-shadow: 0 0 0 5px rgba(25,169,116,.10); }
+.reasoning-glyph.error { background: var(--red); box-shadow: 0 0 0 5px rgba(200,70,70,.10); }
+.reasoning-title { flex: none; font-size: 13px; font-weight: 680; color: #302e29; }
+.reasoning-subtitle { flex: 1; min-width: 0; color: var(--rg-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reasoning-disclosure .status-timeline { margin: 0; padding: 0 14px 12px; }
 .status-timeline { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
 .timeline-step { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 10px; align-items: start; border: 1px solid var(--rg-border); border-radius: 15px; padding: 10px 12px; background: rgba(255,255,255,.68); }
 .timeline-dot { width: 9px; height: 9px; margin-top: 4px; border-radius: 999px; background: var(--rg-accent); box-shadow: 0 0 0 5px rgba(91,70,255,.10); }

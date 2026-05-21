@@ -12,9 +12,11 @@ import {
   reorderVisuals,
   clearDashboard,
 } from "@/components/generative-ui/dashboard-store";
-import { Column, VISUAL_TYPES, DatasetRow, type DerivableVisualType } from "@/components/generative-ui/dataset-types";
+import { Column, VISUAL_TYPES, ALL_VISUAL_TYPES, DatasetRow, type DerivableVisualType } from "@/components/generative-ui/dataset-types";
 
-const visualType = z.enum(VISUAL_TYPES);
+// addVisual may add the executive summary; changeVisualType only retargets derivable charts.
+const addVisualType = z.enum(ALL_VISUAL_TYPES);
+const derivableVisualType = z.enum(VISUAL_TYPES);
 
 function Chip({ text }: { text: string }) {
   return <div className="chat-visual-sent">{text}</div>;
@@ -72,14 +74,14 @@ function ClearBridge() {
 export function useDashboardTools() {
   useRenderTool({
     name: "cacheDataset",
-    parameters: z.object({ id: z.string(), title: z.string(), question: z.string(), columns: z.array(Column), rows: z.array(DatasetRow) }),
+    parameters: z.object({ id: z.string(), title: z.string(), question: z.string(), columns: z.array(Column), rows: z.array(DatasetRow), answer: z.string().optional() }),
     render: ({ parameters }) => <CacheDatasetBridge args={parameters as CacheDatasetArgs} />,
   });
   useRenderTool({
     name: "addVisual",
     parameters: z.object({
       datasetId: z.string(),
-      type: visualType,
+      type: addVisualType,
       dimension: z.string().optional(),
       measure: z.union([z.string(), z.array(z.string())]).optional(),
       title: z.string(),
@@ -93,7 +95,7 @@ export function useDashboardTools() {
   });
   useRenderTool({
     name: "changeVisualType",
-    parameters: z.object({ id: z.string(), type: visualType }),
+    parameters: z.object({ id: z.string(), type: derivableVisualType }),
     render: ({ parameters }) => <ChangeTypeBridge id={parameters?.id ?? ""} type={parameters?.type as DerivableVisualType} />,
   });
   useRenderTool({

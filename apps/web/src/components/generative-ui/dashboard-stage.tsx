@@ -7,6 +7,7 @@ import { DonutChartCard } from "./donut-chart-card";
 import { InsightTable } from "./insight-table";
 import { LineAreaChartCard } from "./line-area-chart-card";
 import { MetricComparisonChartCard } from "./metric-comparison-chart-card";
+import { RiskNarrativeCard } from "./risk-narrative-card";
 import { getDashboardSnapshot, setDashboardPlanning, subscribeDashboard } from "./dashboard-store";
 import { getProcessSnapshot, subscribeProcess } from "./process-store";
 import { getDataset, getDatasetsSnapshot, subscribeDatasets } from "./dataset-store";
@@ -19,10 +20,11 @@ import type {
   InsightTableProps,
   LineAreaChartCardProps,
   MetricComparisonChartCardProps,
+  RiskNarrativeCardProps,
 } from "./types";
 
-// Tables read better across the full grid width; charts pair up 2-up.
-const FULL_WIDTH: ReadonlySet<VisualSpec["type"]> = new Set(["insightTable"]);
+// Executive summary and tables read better across the full grid width; charts pair up 2-up.
+const FULL_WIDTH: ReadonlySet<VisualSpec["type"]> = new Set(["insightTable", "riskNarrativeCard"]);
 
 function spanClass(type: VisualSpec["type"]): string {
   return FULL_WIDTH.has(type) ? "dashboard-visual span-full" : "dashboard-visual";
@@ -43,6 +45,8 @@ function renderSpec(spec: VisualSpec) {
       return <MetricComparisonChartCard {...(props as MetricComparisonChartCardProps)} />;
     case "insightTable":
       return <InsightTable {...(props as InsightTableProps)} />;
+    case "riskNarrativeCard":
+      return <RiskNarrativeCard {...(props as RiskNarrativeCardProps)} />;
   }
 }
 
@@ -107,7 +111,7 @@ export function DashboardStage() {
 
       {!hasVisuals && state.phase !== "idle" && (
         <div className="dashboard-loading">
-          <StatusTimeline events={process.steps} />
+          <StatusTimeline process={process} />
           <SkeletonVisuals />
         </div>
       )}
@@ -115,7 +119,7 @@ export function DashboardStage() {
       {hasVisuals && (
         <div className="dashboard-grid">
           <div className="dashboard-visual span-full">
-            <StatusTimeline events={process.steps} />
+            <StatusTimeline process={process} />
           </div>
           {state.visuals.map((spec) => (
             <div className={spanClass(spec.type)} key={spec.id}>

@@ -23,6 +23,8 @@ export const Dataset = z.object({
   question: z.string(),
   columns: z.array(Column),
   rows: z.array(DatasetRow),
+  // Genie's prose answer behind the dataset, rendered as the executive summary.
+  answer: z.string().optional(),
   traceId: z.string().optional(),
   createdAt: z.number(),
 });
@@ -35,6 +37,7 @@ export type DatasetSummary = {
   columns: Column[];
 };
 
+// Visuals derived from a dataset's columns/rows (dimension + measure).
 export const VISUAL_TYPES = [
   "barChartCard",
   "lineAreaChartCard",
@@ -44,10 +47,16 @@ export const VISUAL_TYPES = [
 ] as const;
 export type DerivableVisualType = (typeof VISUAL_TYPES)[number];
 
+// Executive summary is a prose card, not derived from columns — addable and
+// renderable like a visual, but not a valid changeVisualType target.
+export const NARRATIVE_VISUAL_TYPE = "riskNarrativeCard" as const;
+export const ALL_VISUAL_TYPES = [...VISUAL_TYPES, NARRATIVE_VISUAL_TYPE] as const;
+export type VisualType = (typeof ALL_VISUAL_TYPES)[number];
+
 export const VisualSpec = z.object({
   id: z.string(),
   datasetId: z.string(),
-  type: z.enum(VISUAL_TYPES),
+  type: z.enum(ALL_VISUAL_TYPES),
   dimension: z.string().optional(),
   measure: z.union([z.string(), z.array(z.string())]).optional(),
   title: z.string(),

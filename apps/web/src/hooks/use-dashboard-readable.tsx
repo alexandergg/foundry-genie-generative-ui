@@ -12,6 +12,7 @@ const KIND: Record<VisualSpec["type"], string> = {
   donutChartCard: "donut chart",
   metricComparisonChartCard: "grouped bar comparison chart",
   insightTable: "table",
+  riskNarrativeCard: "executive summary narrative",
 };
 
 export function useDashboardReadable() {

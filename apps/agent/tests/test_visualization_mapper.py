@@ -26,6 +26,12 @@ def test_build_dataset_extracts_columns_and_rows() -> None:
     assert len(dataset["rows"]) == 2
 
 
+def test_build_dataset_carries_narrative_answer() -> None:
+    dataset = build_dataset("exposure by country", _DATASET_ANSWER, trace_id="risk-abc")
+    assert dataset is not None
+    assert "| ES | 100 |" in dataset["answer"]
+
+
 def test_build_dataset_calls_emit_cache_then_addvisual() -> None:
     calls = build_dataset_calls("exposure by country", _DATASET_ANSWER, trace_id="risk-abc")
     names = [call.name for call in calls]
@@ -33,6 +39,28 @@ def test_build_dataset_calls_emit_cache_then_addvisual() -> None:
     assert "addVisual" in names
     add = next(call for call in calls if call.name == "addVisual")
     assert add.args["datasetId"] == "ds-risk-abc"
+
+
+def test_build_dataset_calls_emit_executive_summary_first() -> None:
+    calls = build_dataset_calls("exposure by country", _DATASET_ANSWER, trace_id="risk-abc")
+    # cacheDataset, then the executive-summary narrative pinned to the top.
+    assert calls[0].name == "cacheDataset"
+    assert calls[1].name == "addVisual"
+    assert calls[1].args == {
+        "datasetId": "ds-risk-abc",
+        "type": "riskNarrativeCard",
+        "title": "Executive summary",
+    }
+
+
+def test_build_dataset_calls_without_table_keeps_narrative_card() -> None:
+    calls = build_dataset_calls("Explain the demo", "No governed table is required.", trace_id="risk-xyz")
+    names = [call.name for call in calls]
+    assert names == ["cacheDataset", "addVisual"]
+    cache = calls[0]
+    assert cache.args["rows"] == []
+    assert cache.args["answer"] == "No governed table is required."
+    assert calls[1].args["type"] == "riskNarrativeCard"
 
 
 def test_build_dataset_returns_none_without_rows() -> None:

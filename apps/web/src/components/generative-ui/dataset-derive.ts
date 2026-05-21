@@ -5,6 +5,7 @@ import type {
   InsightTableProps,
   LineAreaChartCardProps,
   MetricComparisonChartCardProps,
+  RiskNarrativeCardProps,
 } from "./types";
 
 export type DerivedProps =
@@ -12,7 +13,8 @@ export type DerivedProps =
   | DonutChartCardProps
   | InsightTableProps
   | LineAreaChartCardProps
-  | MetricComparisonChartCardProps;
+  | MetricComparisonChartCardProps
+  | RiskNarrativeCardProps;
 
 const TIME_RE = /(\d{4}[-/](q[1-4]|\d{1,2})|^q[1-4]\b|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i;
 
@@ -74,5 +76,11 @@ export function buildVisualProps(dataset: Dataset, spec: VisualSpec): DerivedPro
       };
     case "insightTable":
       return { title: spec.title, columns: dataset.columns.map((c) => c.key), rows: dataset.rows.slice(0, 12) };
+    case "riskNarrativeCard":
+      return {
+        title: spec.title,
+        answer: dataset.answer ?? "",
+        assumptions: ["Data queried through the real Foundry/Genie agent"],
+      };
   }
 }

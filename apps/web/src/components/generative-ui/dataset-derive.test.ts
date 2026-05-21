@@ -6,6 +6,7 @@ import type {
   DonutChartCardProps,
   InsightTableProps,
   MetricComparisonChartCardProps,
+  RiskNarrativeCardProps,
 } from "./types";
 
 const dataset: Dataset = {
@@ -61,6 +62,13 @@ describe("dataset-derive", () => {
     };
     const props = buildVisualProps(ds2, spec({ type: "metricComparisonChartCard", measure: ["exposure", "claims"] })) as MetricComparisonChartCardProps;
     expect(props.yKeys).toEqual(["exposure", "claims"]);
+  });
+
+  it("riskNarrativeCard surfaces the dataset's executive summary answer", () => {
+    const ds: Dataset = { ...dataset, answer: "Exposure concentrates in EMEA." };
+    const props = buildVisualProps(ds, spec({ type: "riskNarrativeCard" })) as RiskNarrativeCardProps;
+    expect(props.answer).toBe("Exposure concentrates in EMEA.");
+    expect(props.title).toBe("T");
   });
 
   it("detects time-like dimensions", () => {
