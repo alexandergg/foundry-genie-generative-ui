@@ -151,7 +151,20 @@ def _previous_unapproved_user_message(messages: Sequence[AnyMessage]) -> str | N
     return None
 
 
+def _purge_stale_approvals(now: datetime | None = None) -> None:
+    now = now or datetime.now(timezone.utc)
+    max_age = timedelta(minutes=2 * APPROVAL_TTL_MINUTES)
+    stale = [
+        request_id
+        for request_id, approval in pending_data_approvals.items()
+        if approval.status != "pending" or (now - approval.created_at) > max_age
+    ]
+    for request_id in stale:
+        del pending_data_approvals[request_id]
+
+
 def _approval_request(question: str) -> list[AnyMessage]:
+    _purge_stale_approvals()
     request_id = uuid.uuid4().hex[:10]
     now = datetime.now(timezone.utc)
     purpose = "Send the question to the Foundry agent to query exposure, claims, brokers or overdue balances."

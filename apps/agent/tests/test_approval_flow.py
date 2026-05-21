@@ -42,6 +42,37 @@ def test_approval_request_registers_deterministic_command_payload() -> None:
     assert main.pending_data_approvals[request_id].status == "pending"
 
 
+def test_approval_request_purges_resolved_and_stale_pending_entries() -> None:
+    main.pending_data_approvals.clear()
+    now = datetime.now(timezone.utc)
+
+    used = _pending_approval(request_id="used1")
+    used.status = "used"
+    main.pending_data_approvals["used1"] = used
+
+    rejected = _pending_approval(request_id="rejected1")
+    rejected.status = "rejected"
+    main.pending_data_approvals["rejected1"] = rejected
+
+    leaked_pending = _pending_approval(request_id="leaked1")
+    leaked_pending.created_at = now - timedelta(minutes=2 * main.APPROVAL_TTL_MINUTES + 1)
+    main.pending_data_approvals["leaked1"] = leaked_pending
+
+    fresh = _pending_approval(request_id="fresh1")
+    fresh.created_at = now
+    main.pending_data_approvals["fresh1"] = fresh
+
+    messages = _approval_request("Show exposure by country")
+    new_request_id = messages[1].tool_calls[0]["args"]["requestId"]
+
+    assert "used1" not in main.pending_data_approvals
+    assert "rejected1" not in main.pending_data_approvals
+    assert "leaked1" not in main.pending_data_approvals
+    assert "fresh1" in main.pending_data_approvals
+    assert new_request_id in main.pending_data_approvals
+    assert set(main.pending_data_approvals) == {"fresh1", new_request_id}
+
+
 def _pending_approval(request_id: str = "abc123", question: str = "Show exposure by country") -> main.PendingApproval:
     now = datetime.now(timezone.utc)
     return main.PendingApproval(
