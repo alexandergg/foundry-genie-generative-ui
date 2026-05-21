@@ -148,6 +148,24 @@ class FoundryAgentClient:
     def _invoke_agent_node(self, message: AnyMessage, conversation_id: str | None = None) -> FoundryAgentState:
         return self._foundry_agent_node().invoke(self._agent_state(message, conversation_id))
 
+    @staticmethod
+    def _is_rate_limited(exc: Exception) -> bool:
+        text = str(exc).lower()
+        return "429" in text or "too many requests" in text or "rate limit" in text
+
+    def _invoke_agent_node_retrying(self, message: AnyMessage, conversation_id: str | None = None, attempts: int = 4) -> FoundryAgentState:
+        """Invoke the Foundry agent with exponential backoff on transient rate limits."""
+        delay = 2.0
+        for attempt in range(attempts):
+            try:
+                return self._invoke_agent_node(message, conversation_id)
+            except Exception as exc:
+                if not self._is_rate_limited(exc) or attempt == attempts - 1:
+                    raise
+                time.sleep(delay)
+                delay *= 2
+        raise RuntimeError("unreachable")  # pragma: no cover
+
     def _approval_continuation_state(self, state: FoundryAgentState, tool_call_id: str) -> FoundryAgentState:
         return {
             "messages": [ToolMessage(content=json.dumps({"approve": True}), tool_call_id=tool_call_id)],
@@ -307,7 +325,7 @@ class FoundryAgentClient:
         return response
 
     def supervise(self, messages: Sequence[AnyMessage], has_foundry_conversation: bool = False) -> RouteDecision:
-        response_state = self._invoke_agent_node(HumanMessage(content=self._route_supervisor_prompt(messages, has_foundry_conversation)))
+        response_state = self._invoke_agent_node_retrying(HumanMessage(content=self._route_supervisor_prompt(messages, has_foundry_conversation)))
         if self._pending_type(response_state) == MCP_APPROVAL_PENDING:
             return RouteDecision(route="risk_data", direct_answer=None, rationale="Supervisor attempted a governed tool call.")
         response = self._response_from_state(response_state, "Foundry supervisor did not return an AI message.")
@@ -345,7 +363,7 @@ class FoundryAgentClient:
         )
 
     def decide_dashboard_op(self, question: str, context: dict[str, Any]) -> DashboardOpDecision:
-        state = self._invoke_agent_node(HumanMessage(content=self._dashboard_op_prompt(question, context)))
+        state = self._invoke_agent_node_retrying(HumanMessage(content=self._dashboard_op_prompt(question, context)))
         response = self._response_from_state(state, "Foundry did not return a dashboard-op decision.")
         try:
             return self._parse_dashboard_op_decision(response.answer)
