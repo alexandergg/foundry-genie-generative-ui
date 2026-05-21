@@ -1,5 +1,9 @@
 # Risk & Exposure Intelligence Copilot
 
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="Demo: human-in-the-loop approval, a governed Databricks Genie query through Azure AI Foundry, and the analytics dashboard rendering controlled React visuals" width="900" />
+</p>
+
 A professional demo repository for **Generative UI on Azure AI Foundry** with **Databricks Genie**, **CopilotKit**, and the **AG-UI protocol**.
 
 The demo shows an Exposure Control Room experience where a user asks business questions, approves or revises governed data access, a Microsoft Foundry agent queries a Databricks Genie Space through MCP, and the web UI renders traceable answers as controlled React components: KPIs, tables, bar charts, line/area trends, donut charts, metric comparisons, provenance footers, and executive risk signals.
