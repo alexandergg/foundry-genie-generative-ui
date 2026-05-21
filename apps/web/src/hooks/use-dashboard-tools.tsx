@@ -1,25 +1,82 @@
 "use client";
 
-import { useFrontendTool } from "@copilotkit/react-core/v2";
+import { useEffect } from "react";
+import { useRenderTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
-import { makeDashboardToolHandlers } from "./dashboard-tools";
+import { datasetFromArgs, visualSpecFromArgs, type AddVisualArgs, type CacheDatasetArgs } from "./dashboard-tools";
 import { putDataset } from "@/components/generative-ui/dataset-store";
-import { addVisual, removeVisual, changeVisualType, reorderVisuals, clearDashboard } from "@/components/generative-ui/dashboard-store";
-import { Column, VISUAL_TYPES, DatasetRow } from "@/components/generative-ui/dataset-types";
+import {
+  addVisual,
+  removeVisual,
+  changeVisualType,
+  reorderVisuals,
+  clearDashboard,
+} from "@/components/generative-ui/dashboard-store";
+import { Column, VISUAL_TYPES, DatasetRow, type DerivableVisualType } from "@/components/generative-ui/dataset-types";
 
-const h = makeDashboardToolHandlers({ putDataset, addVisual, removeVisual, changeVisualType, reorderVisuals, clearDashboard });
 const visualType = z.enum(VISUAL_TYPES);
 
+function Chip({ text }: { text: string }) {
+  return <div className="chat-visual-sent">{text}</div>;
+}
+
+// The agent emits these as resolved tool calls (tool_call + ToolMessage), so
+// CopilotKit RENDERS them — it does not execute a handler. Each bridge applies
+// its store side-effect on render. Mutations replace/no-op by id, so repeated
+// renders are idempotent.
+
+function CacheDatasetBridge({ args }: { args: CacheDatasetArgs }) {
+  useEffect(() => {
+    if (args?.id && Array.isArray(args.rows)) putDataset(datasetFromArgs(args));
+  }, [args]);
+  return <Chip text={`Cached ${args?.rows?.length ?? 0} rows`} />;
+}
+
+function AddVisualBridge({ args }: { args: AddVisualArgs }) {
+  useEffect(() => {
+    if (args?.datasetId && args?.type) addVisual(visualSpecFromArgs(args));
+  }, [args]);
+  return <Chip text={`Added ${args?.type ?? "visual"}`} />;
+}
+
+function RemoveVisualBridge({ id }: { id: string }) {
+  useEffect(() => {
+    if (id) removeVisual(id);
+  }, [id]);
+  return <Chip text="Removed visual" />;
+}
+
+function ChangeTypeBridge({ id, type }: { id: string; type: DerivableVisualType }) {
+  useEffect(() => {
+    if (id && type) changeVisualType(id, type);
+  }, [id, type]);
+  return <Chip text={`Changed to ${type}`} />;
+}
+
+function ReorderBridge({ orderedIds }: { orderedIds: string[] }) {
+  const key = orderedIds?.join(",");
+  useEffect(() => {
+    if (orderedIds?.length) reorderVisuals(orderedIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return <Chip text="Reordered" />;
+}
+
+function ClearBridge() {
+  useEffect(() => {
+    clearDashboard();
+  }, []);
+  return <Chip text="Cleared dashboard" />;
+}
+
 export function useDashboardTools() {
-  useFrontendTool({
+  useRenderTool({
     name: "cacheDataset",
-    description: "Store a structured query result so visuals can be derived from it without re-querying. Called by the system after a governed query.",
     parameters: z.object({ id: z.string(), title: z.string(), question: z.string(), columns: z.array(Column), rows: z.array(DatasetRow) }),
-    handler: h.cacheDataset,
+    render: ({ parameters }) => <CacheDatasetBridge args={parameters as CacheDatasetArgs} />,
   });
-  useFrontendTool({
+  useRenderTool({
     name: "addVisual",
-    description: "Add a chart or table derived from a cached dataset. Use dataset column keys for dimension (label/axis) and measure (value).",
     parameters: z.object({
       datasetId: z.string(),
       type: visualType,
@@ -27,30 +84,26 @@ export function useDashboardTools() {
       measure: z.union([z.string(), z.array(z.string())]).optional(),
       title: z.string(),
     }),
-    handler: h.addVisual,
+    render: ({ parameters }) => <AddVisualBridge args={parameters as AddVisualArgs} />,
   });
-  useFrontendTool({
+  useRenderTool({
     name: "removeVisual",
-    description: "Remove a visual from the dashboard by its id.",
     parameters: z.object({ id: z.string() }),
-    handler: h.removeVisual,
+    render: ({ parameters }) => <RemoveVisualBridge id={parameters?.id ?? ""} />,
   });
-  useFrontendTool({
+  useRenderTool({
     name: "changeVisualType",
-    description: "Change an existing visual's chart type (same dataset, dimension and measure).",
     parameters: z.object({ id: z.string(), type: visualType }),
-    handler: h.changeVisualType,
+    render: ({ parameters }) => <ChangeTypeBridge id={parameters?.id ?? ""} type={parameters?.type as DerivableVisualType} />,
   });
-  useFrontendTool({
+  useRenderTool({
     name: "reorderVisuals",
-    description: "Reorder visuals top-to-bottom by id.",
     parameters: z.object({ orderedIds: z.array(z.string()) }),
-    handler: h.reorderVisuals,
+    render: ({ parameters }) => <ReorderBridge orderedIds={parameters?.orderedIds ?? []} />,
   });
-  useFrontendTool({
+  useRenderTool({
     name: "clearDashboard",
-    description: "Remove all visuals from the dashboard.",
     parameters: z.object({}),
-    handler: h.clearDashboard,
+    render: () => <ClearBridge />,
   });
 }

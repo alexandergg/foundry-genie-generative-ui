@@ -1,43 +1,33 @@
-import { describe, expect, it, vi } from "vitest";
-import { makeDashboardToolHandlers } from "./dashboard-tools";
+import { describe, expect, it } from "vitest";
+import { datasetFromArgs, visualSpecFromArgs, visualIdFor } from "./dashboard-tools";
 
-function deps() {
-  return {
-    putDataset: vi.fn(),
-    addVisual: vi.fn(),
-    removeVisual: vi.fn(),
-    changeVisualType: vi.fn(),
-    reorderVisuals: vi.fn(),
-    clearDashboard: vi.fn(),
-  };
-}
-
-describe("dashboard-tools handlers", () => {
-  it("cacheDataset stores a normalized dataset", async () => {
-    const d = deps();
-    const h = makeDashboardToolHandlers(d);
-    await h.cacheDataset({ id: "a", title: "T", question: "q", columns: [{ key: "c", label: "C", role: "dimension" }], rows: [{ c: "x" }] });
-    expect(d.putDataset).toHaveBeenCalledTimes(1);
-    expect(d.putDataset.mock.calls[0][0]).toMatchObject({ id: "a", createdAt: expect.any(Number) });
+describe("dashboard-tools builders", () => {
+  it("datasetFromArgs adds createdAt", () => {
+    const ds = datasetFromArgs({
+      id: "a",
+      title: "T",
+      question: "q",
+      columns: [{ key: "c", label: "C", role: "dimension" }],
+      rows: [{ c: "x" }],
+    });
+    expect(ds).toMatchObject({ id: "a", title: "T" });
+    expect(ds.createdAt).toEqual(expect.any(Number));
   });
 
-  it("addVisual forwards a spec with id and order", async () => {
-    const d = deps();
-    await makeDashboardToolHandlers(d).addVisual({ datasetId: "a", type: "donutChartCard", dimension: "c", measure: "m", title: "T" });
-    expect(d.addVisual).toHaveBeenCalledTimes(1);
-    expect(d.addVisual.mock.calls[0][0]).toMatchObject({ datasetId: "a", type: "donutChartCard", id: expect.any(String), order: expect.any(Number) });
+  it("visualIdFor is deterministic for the same args", () => {
+    const args = { datasetId: "a", type: "donutChartCard", dimension: "c", measure: "m", title: "T" } as const;
+    expect(visualIdFor(args)).toBe(visualIdFor({ ...args, title: "different" }));
   });
 
-  it("removeVisual / changeVisualType / reorder / clear delegate", async () => {
-    const d = deps();
-    const h = makeDashboardToolHandlers(d);
-    await h.removeVisual({ id: "v1" });
-    expect(d.removeVisual).toHaveBeenCalledWith("v1");
-    await h.changeVisualType({ id: "v1", type: "barChartCard" });
-    expect(d.changeVisualType).toHaveBeenCalledWith("v1", "barChartCard");
-    await h.reorderVisuals({ orderedIds: ["b", "a"] });
-    expect(d.reorderVisuals).toHaveBeenCalledWith(["b", "a"]);
-    await h.clearDashboard();
-    expect(d.clearDashboard).toHaveBeenCalledTimes(1);
+  it("visualSpecFromArgs yields a stable id and order across calls (idempotent replace)", () => {
+    const a = visualSpecFromArgs({ datasetId: "a", type: "donutChartCard", dimension: "c", measure: "m", title: "T" });
+    const b = visualSpecFromArgs({ datasetId: "a", type: "donutChartCard", dimension: "c", measure: "m", title: "T2" });
+    expect(a.id).toBe(b.id);
+    expect(a.order).toBe(b.order);
+  });
+
+  it("visualSpecFromArgs joins array measures into the id", () => {
+    const spec = visualSpecFromArgs({ datasetId: "a", type: "metricComparisonChartCard", dimension: "c", measure: ["x", "y"], title: "T" });
+    expect(spec.id).toContain("x_y");
   });
 });
