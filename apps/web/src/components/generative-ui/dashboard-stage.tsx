@@ -17,6 +17,18 @@ import { StatusTimeline, formatDashboardPhase } from "./status-timeline";
 import { WarehouseStatusCard } from "./warehouse-status-card";
 import type { VisualizationPlanProps } from "./types";
 
+// Visuals that read better across the full grid width; everything else (charts,
+// side cards) takes a single column so they pair up 2-up.
+const FULL_WIDTH_VISUALS = new Set<DashboardVisual["type"]>([
+  "kpiStrip",
+  "insightTable",
+  "riskNarrativeCard",
+]);
+
+function spanClass(type: DashboardVisual["type"]): string {
+  return FULL_WIDTH_VISUALS.has(type) ? "dashboard-visual span-full" : "dashboard-visual";
+}
+
 function renderVisual(visual: DashboardVisual) {
   switch (visual.type) {
     case "kpiStrip":
@@ -106,9 +118,13 @@ export function DashboardStage() {
       )}
 
       {hasVisuals && (
-        <div className="dashboard-visuals">
-          <StatusTimeline events={process.steps} />
-          {state.visuals.map((visual) => <div className="dashboard-visual" key={visual.id}>{renderVisual(visual)}</div>)}
+        <div className="dashboard-grid">
+          <div className="dashboard-visual span-full">
+            <StatusTimeline events={process.steps} />
+          </div>
+          {state.visuals.map((visual) => (
+            <div className={spanClass(visual.type)} key={visual.id}>{renderVisual(visual)}</div>
+          ))}
         </div>
       )}
     </section>

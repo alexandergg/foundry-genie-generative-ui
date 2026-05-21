@@ -4,13 +4,16 @@ import type { KpiStripProps } from "./types";
 
 export function KpiStrip({ items, provenance }: KpiStripProps) {
   return (
-    <div className="viz-card">
+    <div className="kpi-strip">
       <div className="kpi-grid">
         {items.map((item, index) => (
           <div className={`kpi ${item.status ?? "stable"}`} key={`${item.label}-${index}`}>
-            <div className="kpi-label">{item.label}</div>
+            <div className="kpi-top">
+              <span className="kpi-icon" aria-hidden="true" />
+              {item.delta ? <span className="kpi-delta">{item.delta}</span> : null}
+            </div>
             <div className="kpi-value">{formatValue(item.value, item.format)}</div>
-            {item.delta ? <div className="kpi-delta">{item.delta}</div> : null}
+            <div className="kpi-label">{item.label}</div>
           </div>
         ))}
       </div>
