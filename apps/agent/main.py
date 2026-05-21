@@ -286,6 +286,15 @@ async def supervise_request(state: AgentState) -> dict[str, Any]:
             "rationale": decision.rationale,
         },
     )
+    if decision.route == "risk_data":
+        await _emit_ui_event(
+            "plan.created",
+            "supervise",
+            {
+                "message": "Plan: request human approval, then query governed risk data and visualize it.",
+                "rationale": decision.rationale,
+            },
+        )
     return {"route": decision.route}
 
 
@@ -332,9 +341,13 @@ async def _execute_risk_query(question: str, conversation_id: str | None, approv
     trace_id = f"risk-{uuid.uuid4().hex[:12]}"
     try:
         response = await asyncio.to_thread(foundry_client.ask, question, conversation_id)
+        await _emit_ui_event("normalization.completed", "normalize", {"message": "Genie results normalized into governed records."})
         await _emit_ui_event("query.completed", "query", {"message": "Governed query completed.", "traceId": trace_id})
+        await _emit_ui_event("visualization.proposed", "visualize", {"message": "Proposing controlled visualizations for the result."})
         messages.extend(_render_component_messages(question, response, settings, approval_request_id, trace_id))
         await _emit_ui_event("visualization.rendered", "visualize", {"message": "Controlled visualizations rendered."})
+        await _emit_ui_event("followups.suggested", "complete", {"message": "Suggested grounded follow-up questions."})
+        await _emit_ui_event("provenance.attached", "complete", {"message": "Provenance and trace id attached to the result.", "traceId": trace_id})
         messages.append(AIMessage(content="I used the real Genie result through the active Foundry conversation to compose the view."))
         conversation_id = response.conversation_id or conversation_id
     except Exception as exc:
@@ -363,6 +376,11 @@ async def run_risk(state: AgentState) -> dict[str, Any]:
         approval_request_id = approval_command.request_id
         approved_question = _resolve_approved_question(approval_command, input_messages)
         if approval_command.action == "reject":
+            await _emit_ui_event(
+                "approval.updated",
+                "approval",
+                {"message": "Human rejected the governed data request.", "status": "rejected"},
+            )
             return _state_update([AIMessage(content="Data access request rejected. I did not query Genie.")], conversation_id)
         if not approved_question:
             return _state_update(
@@ -373,8 +391,21 @@ async def run_risk(state: AgentState) -> dict[str, Any]:
                 ],
                 conversation_id,
             )
+        await _emit_ui_event(
+            "approval.updated",
+            "approval",
+            {
+                "message": "Human approved the governed data request.",
+                "status": "revised" if approval_command.action == "revise" else "approved",
+            },
+        )
         question = approved_question
     elif settings.require_human_data_approval:
+        await _emit_ui_event(
+            "approval.requested",
+            "approval",
+            {"message": "Requesting human approval before querying governed data."},
+        )
         return _state_update(_approval_request(question), conversation_id)
 
     return await _execute_risk_query(question, conversation_id, approval_request_id)

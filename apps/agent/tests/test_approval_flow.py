@@ -271,6 +271,86 @@ async def test_expired_approval_does_not_query_genie(monkeypatch: pytest.MonkeyP
     assert main.pending_data_approvals["abc123"].status == "expired"
 
 
+async def test_supervisor_emits_plan_created_when_routing_to_governed_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    emitted: list[dict[str, Any]] = []
+
+    async def capture_event(name: str, payload: dict[str, Any]) -> None:
+        if name == "risk_ui_event":
+            emitted.append(payload)
+
+    def supervise(messages: list[Any], has_foundry_conversation: bool = False) -> RouteDecision:
+        return RouteDecision(route="risk_data", direct_answer=None, rationale="Requires governed aggregation.")
+
+    monkeypatch.setattr(main, "adispatch_custom_event", capture_event)
+    monkeypatch.setattr(main.foundry_client, "supervise", supervise)
+
+    await main.supervise_request({"messages": [HumanMessage(content="Show exposure by country")]})
+
+    kinds = [event["kind"] for event in emitted]
+    assert "plan.created" in kinds
+    plan_event = next(event for event in emitted if event["kind"] == "plan.created")
+    assert plan_event["phase"] == "supervise"
+    assert plan_event["payload"]["message"]
+
+
+async def test_supervisor_does_not_emit_plan_created_for_direct_route(monkeypatch: pytest.MonkeyPatch) -> None:
+    emitted: list[dict[str, Any]] = []
+
+    async def capture_event(name: str, payload: dict[str, Any]) -> None:
+        if name == "risk_ui_event":
+            emitted.append(payload)
+
+    def supervise(messages: list[Any], has_foundry_conversation: bool = False) -> RouteDecision:
+        return RouteDecision(route="direct", direct_answer=None, rationale="No governed data needed.")
+
+    monkeypatch.setattr(main, "adispatch_custom_event", capture_event)
+    monkeypatch.setattr(main.foundry_client, "supervise", supervise)
+
+    await main.supervise_request({"messages": [HumanMessage(content="What can you do?")]})
+
+    assert "plan.created" not in [event["kind"] for event in emitted]
+
+
+async def test_run_risk_emits_approval_requested_when_approval_required(monkeypatch: pytest.MonkeyPatch) -> None:
+    main.pending_data_approvals.clear()
+    emitted: list[dict[str, Any]] = []
+
+    async def capture_event(name: str, payload: dict[str, Any]) -> None:
+        if name == "risk_ui_event":
+            emitted.append(payload)
+
+    monkeypatch.setattr(main, "adispatch_custom_event", capture_event)
+    assert main.settings.require_human_data_approval, "test env must require approval"
+
+    await main.run_risk({"messages": [HumanMessage(content="Show exposure by country")], "route": "risk_data"})
+
+    approval_events = [event for event in emitted if event["kind"] == "approval.requested"]
+    assert len(approval_events) == 1
+    assert approval_events[0]["phase"] == "approval"
+
+
+async def test_run_risk_emits_approval_updated_on_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
+    main.pending_data_approvals.clear()
+    main.pending_data_approvals["abc123"] = _pending_approval()
+    emitted: list[dict[str, Any]] = []
+
+    async def capture_event(name: str, payload: dict[str, Any]) -> None:
+        if name == "risk_ui_event":
+            emitted.append(payload)
+
+    async def stub_query(question: str, conversation_id: str | None, approval_request_id: str | None = None) -> dict[str, Any]:
+        return {"messages": [AIMessage(content="ok")]}
+
+    monkeypatch.setattr(main, "adispatch_custom_event", capture_event)
+    monkeypatch.setattr(main, "_execute_risk_query", stub_query)
+
+    await main.run_risk({"messages": [HumanMessage(content="approve abc123")], "route": "risk_data"})
+
+    approval_events = [event for event in emitted if event["kind"] == "approval.updated"]
+    assert len(approval_events) == 1
+    assert approval_events[0]["payload"]["status"] == "approved"
+
+
 async def test_execute_risk_query_emits_versioned_ui_events(monkeypatch: pytest.MonkeyPatch) -> None:
     emitted_events: list[tuple[str, dict[str, Any]]] = []
 
@@ -291,10 +371,16 @@ async def test_execute_risk_query_emits_versioned_ui_events(monkeypatch: pytest.
     assert [event["kind"] for event in risk_events] == [
         "query.started",
         "normalization.started",
+        "normalization.completed",
         "query.completed",
+        "visualization.proposed",
         "visualization.rendered",
+        "followups.suggested",
+        "provenance.attached",
     ]
     assert all(event["schemaVersion"] == "risk-ui/v1" for event in risk_events)
+    provenance = next(event for event in risk_events if event["kind"] == "provenance.attached")
+    assert provenance["payload"]["traceId"].startswith("risk-")
     assert all(
         not (hasattr(message, "tool_calls") and any(tc.get("name") == "agentStatusCard" for tc in (message.tool_calls or [])))
         for message in result["messages"]
