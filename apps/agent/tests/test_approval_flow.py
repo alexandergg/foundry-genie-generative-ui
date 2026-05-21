@@ -7,7 +7,13 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 import main
-from main import FOUNDRY_CONVERSATION_KEY, _approval_request, _approved_question, _previous_unapproved_user_message
+from main import (
+    FOUNDRY_CONVERSATION_KEY,
+    ApprovalCommand,
+    _approval_request,
+    _previous_unapproved_user_message,
+    _resolve_approved_question,
+)
 from src.foundry_agent_client import FoundryAgentClient, FoundryAgentResponse, RouteDecision
 
 
@@ -85,13 +91,17 @@ def _pending_approval(request_id: str = "abc123", question: str = "Show exposure
     )
 
 
+def _approve(request_id: str, messages: list[Any]) -> str | None:
+    return _resolve_approved_question(ApprovalCommand(action="approve", request_id=request_id), messages)
+
+
 def test_approved_question_consumes_pending_request_once() -> None:
     main.pending_data_approvals.clear()
     main.pending_data_approvals["abc123"] = _pending_approval()
 
-    assert _approved_question("abc123", []) == "Show exposure by country"
+    assert _approve("abc123", []) == "Show exposure by country"
     assert main.pending_data_approvals["abc123"].status == "used"
-    assert _approved_question("abc123", []) is None
+    assert _approve("abc123", []) is None
 
 
 def test_approved_question_falls_back_to_previous_user_message_for_legacy_sessions() -> None:
@@ -100,7 +110,7 @@ def test_approved_question_falls_back_to_previous_user_message_for_legacy_sessio
         HumanMessage(content="approve missing", id="approval"),
     ]
 
-    assert _approved_question("missing", messages) == "Show overdue balance by risk class"
+    assert _approve("missing", messages) == "Show overdue balance by risk class"
 
 
 def test_route_decision_parser_accepts_json_with_markdown_fence() -> None:

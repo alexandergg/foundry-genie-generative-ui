@@ -131,11 +131,6 @@ def _approval_command(message: str) -> ApprovalCommand | None:
     return None
 
 
-def _approval_token(message: str) -> str | None:
-    command = _approval_command(message)
-    return command.request_id if command and command.action == "approve" else None
-
-
 def _simple_direct_greeting(message: str) -> bool:
     normalized = re.sub(r"[^a-záéíóúüñ]+", " ", message.lower()).strip()
     return normalized in {"hi", "hello", "hey", "hola", "buenas", "buenos dias", "buenas tardes", "buenas noches"}
@@ -220,10 +215,6 @@ def _resolve_approved_question(command: ApprovalCommand, messages: Sequence[AnyM
     if command.action == "revise" and command.revised_question:
         return command.revised_question
     return approval.question
-
-
-def _approved_question(approval_token: str, messages: Sequence[AnyMessage]) -> str | None:
-    return _resolve_approved_question(ApprovalCommand(action="approve", request_id=approval_token), messages)
 
 
 def _component_message(name: str, args: dict[str, Any]) -> list[AnyMessage]:
