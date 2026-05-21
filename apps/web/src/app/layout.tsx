@@ -13,7 +13,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="description" content="Generative UI demo with Azure AI Foundry, Databricks Genie and AG-UI" />
       </head>
       <body>
-        <CopilotKit runtimeUrl="/api/copilotkit">{children}</CopilotKit>
+        <CopilotKit runtimeUrl="/api/copilotkit" showDevConsole={false}>
+          {children}
+        </CopilotKit>
       </body>
     </html>
   );
