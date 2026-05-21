@@ -126,8 +126,3 @@ export function failRun() {
   state = { ...state, status: "error", finishedAt: Date.now() };
   emit();
 }
-
-export function getRunDurationSeconds(): number | undefined {
-  if (state.startedAt == null || state.finishedAt == null) return undefined;
-  return Math.max(0, Math.round((state.finishedAt - state.startedAt) / 1000));
-}
