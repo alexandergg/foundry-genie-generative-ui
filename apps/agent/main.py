@@ -227,7 +227,6 @@ def _component_message(name: str, args: dict[str, Any]) -> list[AnyMessage]:
     ]
 
 
-
 def _render_component_messages(
     question: str,
     response: FoundryAgentResponse,
@@ -328,7 +327,13 @@ async def dashboard_op(state: AgentState) -> dict[str, Any]:
         await _emit_ui_event("error.safe", "error", {"message": "Could not decide the dashboard update.", "errorType": type(exc).__name__})
         return _state_update([_safe_error_message("I could not update the dashboard.", exc)], conversation_id)
 
-    if decision.tool == "none" or decision.tool not in {"addVisual", "removeVisual", "changeVisualType", "reorderVisuals", "clearDashboard"}:
+    if decision.tool == "none" or decision.tool not in {
+        "addVisual",
+        "removeVisual",
+        "changeVisualType",
+        "reorderVisuals",
+        "clearDashboard",
+    }:
         return _state_update([AIMessage(content=decision.message or "I could not map that to a dashboard action.")], conversation_id)
 
     await _emit_ui_event(
@@ -387,7 +392,9 @@ async def _execute_risk_query(question: str, conversation_id: str | None, approv
         messages.extend(_render_component_messages(question, response, trace_id))
         await _emit_ui_event("visualization.rendered", "visualize", {"message": "Controlled visualizations rendered."})
         await _emit_ui_event("followups.suggested", "complete", {"message": "Suggested grounded follow-up questions."})
-        await _emit_ui_event("provenance.attached", "complete", {"message": "Provenance and trace id attached to the result.", "traceId": trace_id})
+        await _emit_ui_event(
+            "provenance.attached", "complete", {"message": "Provenance and trace id attached to the result.", "traceId": trace_id}
+        )
         messages.append(AIMessage(content="I used the real Genie result through the active Foundry conversation to compose the view."))
         conversation_id = response.conversation_id or conversation_id
     except Exception as exc:

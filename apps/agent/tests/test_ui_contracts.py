@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from src.component_registry import CONTROLLED_COMPONENT_NAMES, validate_component_name
@@ -44,14 +46,14 @@ def test_agent_status_card_is_no_longer_a_controlled_component() -> None:
     assert "agentStatusCard" not in CONTROLLED_COMPONENT_NAMES
 
 
-def test_emit_ui_event_only_dispatches_risk_ui_event(monkeypatch) -> None:
+def test_emit_ui_event_only_dispatches_risk_ui_event(monkeypatch: pytest.MonkeyPatch) -> None:
     import asyncio
 
     import main
 
     dispatched: list[str] = []
 
-    async def fake_dispatch(name, payload):  # noqa: ANN001
+    async def fake_dispatch(name: str, payload: dict[str, Any]) -> None:
         dispatched.append(name)
 
     monkeypatch.setattr(main, "adispatch_custom_event", fake_dispatch)

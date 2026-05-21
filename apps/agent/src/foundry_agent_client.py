@@ -325,7 +325,9 @@ class FoundryAgentClient:
         return response
 
     def supervise(self, messages: Sequence[AnyMessage], has_foundry_conversation: bool = False) -> RouteDecision:
-        response_state = self._invoke_agent_node_retrying(HumanMessage(content=self._route_supervisor_prompt(messages, has_foundry_conversation)))
+        response_state = self._invoke_agent_node_retrying(
+            HumanMessage(content=self._route_supervisor_prompt(messages, has_foundry_conversation))
+        )
         if self._pending_type(response_state) == MCP_APPROVAL_PENDING:
             return RouteDecision(route="risk_data", direct_answer=None, rationale="Supervisor attempted a governed tool call.")
         response = self._response_from_state(response_state, "Foundry supervisor did not return an AI message.")
@@ -354,7 +356,9 @@ class FoundryAgentClient:
         payload = self._json_object_from_text(text)
         tool = payload.get("tool")
         if tool not in _DASHBOARD_OP_TOOLS:
-            return DashboardOpDecision(tool="none", args={}, message=str(payload.get("message") or "I could not map that to a dashboard action."))
+            return DashboardOpDecision(
+                tool="none", args={}, message=str(payload.get("message") or "I could not map that to a dashboard action.")
+            )
         args = payload.get("args")
         return DashboardOpDecision(
             tool=str(tool),
@@ -368,7 +372,9 @@ class FoundryAgentClient:
         try:
             return self._parse_dashboard_op_decision(response.answer)
         except (ValueError, json.JSONDecodeError):
-            return DashboardOpDecision(tool="none", args={}, message=response.answer.strip()[:600] or "I could not parse a dashboard action.")
+            return DashboardOpDecision(
+                tool="none", args={}, message=response.answer.strip()[:600] or "I could not parse a dashboard action."
+            )
 
     def answer_direct(self, question: str, conversation_id: str | None = None) -> FoundryAgentResponse:
         state = self._invoke_agent_node(HumanMessage(content=self._direct_prompt(question)), conversation_id)

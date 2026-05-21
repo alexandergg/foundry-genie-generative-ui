@@ -405,7 +405,7 @@ def build_dataset_calls(question: str, answer: str, trace_id: str | None = None)
         # No table behind the answer: cache a narrative-only dataset so the
         # executive summary still renders as a dashboard card.
         dataset_id = f"ds-{trace_id}" if trace_id else f"ds-{uuid.uuid4().hex[:12]}"
-        narrative_dataset = {
+        narrative_dataset: dict[str, Any] = {
             "id": dataset_id,
             "title": question[:80] or "Genie result",
             "question": question,

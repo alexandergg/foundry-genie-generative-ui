@@ -69,6 +69,7 @@ def test_approval_request_purges_resolved_and_stale_pending_entries() -> None:
     main.pending_data_approvals["fresh1"] = fresh
 
     messages = _approval_request("Show exposure by country")
+    assert isinstance(messages[1], AIMessage)
     new_request_id = messages[1].tool_calls[0]["args"]["requestId"]
 
     assert "used1" not in main.pending_data_approvals
