@@ -1,6 +1,42 @@
 from __future__ import annotations
 
-from src.visualization_mapper import build_component_calls, extract_bullet_metrics, extract_markdown_table
+from src.visualization_mapper import (
+    build_component_calls,
+    build_dataset,
+    build_dataset_calls,
+    extract_bullet_metrics,
+    extract_markdown_table,
+)
+
+_DATASET_ANSWER = """
+| Country | Exposure |
+| --- | --- |
+| ES | 100 |
+| FR | 200 |
+"""
+
+
+def test_build_dataset_extracts_columns_and_rows() -> None:
+    dataset = build_dataset("exposure by country", _DATASET_ANSWER, trace_id="risk-abc")
+    assert dataset is not None
+    assert dataset["id"] == "ds-risk-abc"
+    roles = {column["key"]: column["role"] for column in dataset["columns"]}
+    assert roles["Country"] == "dimension"
+    assert roles["Exposure"] == "measure"
+    assert len(dataset["rows"]) == 2
+
+
+def test_build_dataset_calls_emit_cache_then_addvisual() -> None:
+    calls = build_dataset_calls("exposure by country", _DATASET_ANSWER, trace_id="risk-abc")
+    names = [call.name for call in calls]
+    assert names[0] == "cacheDataset"
+    assert "addVisual" in names
+    add = next(call for call in calls if call.name == "addVisual")
+    assert add.args["datasetId"] == "ds-risk-abc"
+
+
+def test_build_dataset_returns_none_without_rows() -> None:
+    assert build_dataset("hello", "no table here") is None
 
 
 def test_extract_markdown_table_parses_currency_and_european_numbers() -> None:

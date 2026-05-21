@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -357,4 +358,91 @@ def build_component_calls(
         )
     )
 
+    return calls
+
+
+def build_dataset(question: str, answer: str, trace_id: str | None = None) -> dict[str, Any] | None:
+    """Capture the structured rows behind a Genie answer as a cacheable dataset."""
+    headers, rows = extract_markdown_table(answer)
+    if not rows:
+        headers, rows = extract_bullet_metrics(answer, question)
+    if not rows:
+        return None
+    numeric = set(_numeric_keys(headers, rows))
+    columns = [
+        {
+            "key": header,
+            "label": _humanize(header),
+            "role": "measure" if header in numeric else "dimension",
+            "format": _format_for_key(header) if header in numeric else "text",
+        }
+        for header in headers
+    ]
+    dataset_id = f"ds-{trace_id}" if trace_id else f"ds-{uuid.uuid4().hex[:12]}"
+    return {
+        "id": dataset_id,
+        "title": question[:80] or "Genie result",
+        "question": question,
+        "columns": columns,
+        "rows": rows,
+        "traceId": trace_id,
+    }
+
+
+def build_dataset_calls(question: str, answer: str, trace_id: str | None = None) -> list[ComponentCall]:
+    """Cache the dataset once, then emit an initial set of derived-visual specs."""
+    dataset = build_dataset(question, answer, trace_id)
+    if dataset is None:
+        return [ComponentCall("riskNarrativeCard", {"title": "Executive summary", "answer": answer[:1800]})]
+
+    headers = [column["key"] for column in dataset["columns"]]
+    label_key, value_key = _pick_keys(headers, dataset["rows"])
+    numeric = [column["key"] for column in dataset["columns"] if column["role"] == "measure"]
+    calls: list[ComponentCall] = [ComponentCall("cacheDataset", dataset)]
+
+    if label_key and value_key:
+        calls.append(
+            ComponentCall(
+                "addVisual",
+                {"datasetId": dataset["id"], "type": "insightTable", "title": f"Details · {_humanize(label_key)}"},
+            )
+        )
+        calls.append(
+            ComponentCall(
+                "addVisual",
+                {
+                    "datasetId": dataset["id"],
+                    "type": "barChartCard",
+                    "dimension": label_key,
+                    "measure": value_key,
+                    "title": f"{_humanize(value_key)} by {_humanize(label_key)}",
+                },
+            )
+        )
+        if _is_time_like_key(label_key, dataset["rows"]):
+            calls.append(
+                ComponentCall(
+                    "addVisual",
+                    {
+                        "datasetId": dataset["id"],
+                        "type": "lineAreaChartCard",
+                        "dimension": label_key,
+                        "measure": numeric[:2] or value_key,
+                        "title": f"Trend · {_humanize(label_key)}",
+                    },
+                )
+            )
+        else:
+            calls.append(
+                ComponentCall(
+                    "addVisual",
+                    {
+                        "datasetId": dataset["id"],
+                        "type": "donutChartCard",
+                        "dimension": label_key,
+                        "measure": value_key,
+                        "title": f"{_humanize(value_key)} share by {_humanize(label_key)}",
+                    },
+                )
+            )
     return calls

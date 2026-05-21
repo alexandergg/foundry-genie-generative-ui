@@ -21,10 +21,10 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
-from src.config import Settings, load_settings
+from src.config import load_settings
 from src.foundry_agent_client import CONVERSATION_ID_KEY, FoundryAgentClient, FoundryAgentResponse, RouteDecision
 from src.ui_event_contract import UiEventKind, UiEventPhase, build_ui_event
-from src.visualization_mapper import build_component_calls
+from src.visualization_mapper import build_dataset_calls
 
 Route = Literal["direct", "risk_data"]
 GraphNode = Literal["direct_response", "run_risk"]
@@ -229,18 +229,10 @@ def _component_message(name: str, args: dict[str, Any]) -> list[AnyMessage]:
 def _render_component_messages(
     question: str,
     response: FoundryAgentResponse,
-    app_settings: Settings,
-    approval_request_id: str | None = None,
     trace_id: str | None = None,
 ) -> list[AnyMessage]:
     messages: list[AnyMessage] = []
-    calls = build_component_calls(
-        question,
-        response.answer,
-        app_settings.databricks_sql_warehouse_name,
-        approval_request_id=approval_request_id,
-        trace_id=trace_id,
-    )
+    calls = build_dataset_calls(question, response.answer, trace_id)
     for call in calls:
         messages.extend(_component_message(call.name, call.args))
     return messages
@@ -348,7 +340,7 @@ async def _execute_risk_query(question: str, conversation_id: str | None, approv
         await _emit_ui_event("normalization.completed", "normalize", {"message": "Genie results normalized into governed records."})
         await _emit_ui_event("query.completed", "query", {"message": "Governed query completed.", "traceId": trace_id})
         await _emit_ui_event("visualization.proposed", "visualize", {"message": "Proposing controlled visualizations for the result."})
-        messages.extend(_render_component_messages(question, response, settings, approval_request_id, trace_id))
+        messages.extend(_render_component_messages(question, response, trace_id))
         await _emit_ui_event("visualization.rendered", "visualize", {"message": "Controlled visualizations rendered."})
         await _emit_ui_event("followups.suggested", "complete", {"message": "Suggested grounded follow-up questions."})
         await _emit_ui_event("provenance.attached", "complete", {"message": "Provenance and trace id attached to the result.", "traceId": trace_id})

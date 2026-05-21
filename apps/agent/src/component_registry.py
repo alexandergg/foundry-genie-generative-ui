@@ -13,6 +13,13 @@ CONTROLLED_COMPONENT_NAMES: tuple[str, ...] = (
     "policyBreachCard",
     "mcpApprovalCard",
     "followUpQuestions",
+    # Dashboard frontend tools (agent-invoked, handled client-side)
+    "cacheDataset",
+    "addVisual",
+    "removeVisual",
+    "changeVisualType",
+    "reorderVisuals",
+    "clearDashboard",
 )
 
 _CONTROLLED_COMPONENT_NAME_SET = frozenset(CONTROLLED_COMPONENT_NAMES)
