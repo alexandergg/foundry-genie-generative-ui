@@ -9,11 +9,7 @@ export function FollowUpQuestions({ title, questions }: FollowUpQuestionsProps) 
   const { copilotkit } = useCopilotKit();
 
   const ask = (question: string) => {
-    setDashboardPlanning({
-      approach: "Run a drill-down on the previous result and refresh the visual canvas.",
-      technology: "Azure AI Foundry + Databricks Genie + AG-UI",
-      key_elements: ["follow-up", "real query", "new chart"],
-    });
+    setDashboardPlanning();
     agent.addMessage({ id: crypto.randomUUID(), content: question, role: "user" });
     copilotkit.runAgent({ agent });
   };

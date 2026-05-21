@@ -3,52 +3,46 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { DatabricksGenieMark } from "../databricks-genie-mark";
 import { BarChartCard } from "./bar-chart-card";
-import { getDashboardSnapshot, publishDashboardVisual, setDashboardPlanning, subscribeDashboard } from "./dashboard-store";
-import { getProcessSnapshot, subscribeProcess } from "./process-store";
-import type { DashboardVisual } from "./dashboard-store";
 import { DonutChartCard } from "./donut-chart-card";
 import { InsightTable } from "./insight-table";
-import { KpiStrip } from "./kpi-strip";
 import { LineAreaChartCard } from "./line-area-chart-card";
 import { MetricComparisonChartCard } from "./metric-comparison-chart-card";
-import { PolicyBreachCard } from "./policy-breach-card";
-import { RiskNarrativeCard } from "./risk-narrative-card";
+import { getDashboardSnapshot, setDashboardPlanning, subscribeDashboard } from "./dashboard-store";
+import { getProcessSnapshot, subscribeProcess } from "./process-store";
+import { getDataset, getDatasetsSnapshot, subscribeDatasets } from "./dataset-store";
+import { buildVisualProps, type DerivedProps } from "./dataset-derive";
+import type { VisualSpec } from "./dataset-types";
 import { StatusTimeline, formatDashboardPhase } from "./status-timeline";
-import { WarehouseStatusCard } from "./warehouse-status-card";
-import type { VisualizationPlanProps } from "./types";
+import type {
+  BarChartCardProps,
+  DonutChartCardProps,
+  InsightTableProps,
+  LineAreaChartCardProps,
+  MetricComparisonChartCardProps,
+} from "./types";
 
-// Visuals that read better across the full grid width; everything else (charts,
-// side cards) takes a single column so they pair up 2-up.
-const FULL_WIDTH_VISUALS = new Set<DashboardVisual["type"]>([
-  "kpiStrip",
-  "insightTable",
-  "riskNarrativeCard",
-]);
+// Tables read better across the full grid width; charts pair up 2-up.
+const FULL_WIDTH: ReadonlySet<VisualSpec["type"]> = new Set(["insightTable"]);
 
-function spanClass(type: DashboardVisual["type"]): string {
-  return FULL_WIDTH_VISUALS.has(type) ? "dashboard-visual span-full" : "dashboard-visual";
+function spanClass(type: VisualSpec["type"]): string {
+  return FULL_WIDTH.has(type) ? "dashboard-visual span-full" : "dashboard-visual";
 }
 
-function renderVisual(visual: DashboardVisual) {
-  switch (visual.type) {
-    case "kpiStrip":
-      return <KpiStrip {...visual.props} />;
+function renderSpec(spec: VisualSpec) {
+  const dataset = getDataset(spec.datasetId);
+  if (!dataset) return null;
+  const props: DerivedProps = buildVisualProps(dataset, spec);
+  switch (spec.type) {
     case "barChartCard":
-      return <BarChartCard {...visual.props} />;
+      return <BarChartCard {...(props as BarChartCardProps)} />;
     case "lineAreaChartCard":
-      return <LineAreaChartCard {...visual.props} />;
+      return <LineAreaChartCard {...(props as LineAreaChartCardProps)} />;
     case "donutChartCard":
-      return <DonutChartCard {...visual.props} />;
+      return <DonutChartCard {...(props as DonutChartCardProps)} />;
     case "metricComparisonChartCard":
-      return <MetricComparisonChartCard {...visual.props} />;
+      return <MetricComparisonChartCard {...(props as MetricComparisonChartCardProps)} />;
     case "insightTable":
-      return <InsightTable {...visual.props} />;
-    case "riskNarrativeCard":
-      return <RiskNarrativeCard {...visual.props} />;
-    case "warehouseStatusCard":
-      return <WarehouseStatusCard {...visual.props} />;
-    case "policyBreachCard":
-      return <PolicyBreachCard {...visual.props} />;
+      return <InsightTable {...(props as InsightTableProps)} />;
   }
 }
 
@@ -78,6 +72,7 @@ function SkeletonVisuals() {
 
 export function DashboardStage() {
   const state = useSyncExternalStore(subscribeDashboard, getDashboardSnapshot, getDashboardSnapshot);
+  useSyncExternalStore(subscribeDatasets, getDatasetsSnapshot, getDatasetsSnapshot);
   const process = useSyncExternalStore(subscribeProcess, getProcessSnapshot, getProcessSnapshot);
   const hasVisuals = state.visuals.length > 0;
 
@@ -122,8 +117,10 @@ export function DashboardStage() {
           <div className="dashboard-visual span-full">
             <StatusTimeline events={process.steps} />
           </div>
-          {state.visuals.map((visual) => (
-            <div className={spanClass(visual.type)} key={visual.id}>{renderVisual(visual)}</div>
+          {state.visuals.map((spec) => (
+            <div className={spanClass(spec.type)} key={spec.id}>
+              {renderSpec(spec)}
+            </div>
           ))}
         </div>
       )}
@@ -131,18 +128,10 @@ export function DashboardStage() {
   );
 }
 
-export function DashboardVisualBridge({ visual }: { visual: DashboardVisual }) {
+export function DashboardPlanBridge() {
   useEffect(() => {
-    publishDashboardVisual(visual);
-  }, [visual]);
-
-  return <div className="chat-visual-sent">Visualization updated in the central panel.</div>;
-}
-
-export function DashboardPlanBridge({ plan }: { plan: VisualizationPlanProps }) {
-  useEffect(() => {
-    setDashboardPlanning(plan);
-  }, [plan]);
+    setDashboardPlanning();
+  }, []);
 
   return <div className="chat-visual-sent">Preparing the visualization in the central panel…</div>;
 }
