@@ -72,11 +72,24 @@ def test_build_dataset_calls_emit_table_for_numeric_only_dimension() -> None:
 def test_build_dataset_calls_without_table_keeps_narrative_card() -> None:
     calls = build_dataset_calls("Explain the demo", "No governed table is required.", trace_id="risk-xyz")
     names = [call.name for call in calls]
-    assert names == ["cacheDataset", "addVisual"]
+    assert names == ["cacheDataset", "addVisual", "followUpQuestions"]
     cache = calls[0]
     assert cache.args["rows"] == []
     assert cache.args["answer"] == "No governed table is required."
     assert calls[1].args["type"] == "riskNarrativeCard"
+
+
+def test_build_dataset_calls_emit_follow_up_questions() -> None:
+    # The followups.suggested status event is only honest if a followUpQuestions
+    # component is actually emitted; cover both the table and narrative-only paths.
+    for question, answer in [
+        ("compare exposure and claims by broker", _DATASET_ANSWER),
+        ("Explain the demo", "No governed table is required."),
+    ]:
+        follow = next(call for call in build_dataset_calls(question, answer) if call.name == "followUpQuestions")
+        assert follow.args["title"] == "Continue the analysis"
+        assert 1 <= len(follow.args["questions"]) <= 4
+        assert all(isinstance(q, str) and q for q in follow.args["questions"])
 
 
 def test_build_dataset_returns_none_without_rows() -> None:

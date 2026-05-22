@@ -126,6 +126,34 @@ def _format_for_key(key: str) -> str:
     return "currency" if "eur" in key.lower() or "amount" in key.lower() or "balance" in key.lower() else "number"
 
 
+def build_follow_up_questions(question: str) -> list[str]:
+    """Grounded next-step questions tailored to the asked question's focus."""
+    lowered = question.lower()
+    if "2026-q1" in lowered and "2026-q2" in lowered:
+        return [
+            "Which countries explain the exposure variation between 2026-Q1 and 2026-Q2?",
+            "Break down overdue balance by risk class for 2026-Q2.",
+            "Compare exposure and claims by broker between 2026-Q1 and 2026-Q2.",
+        ]
+    if "broker" in lowered or "claim" in lowered or "siniestro" in lowered:
+        return [
+            "Give me the top 5 brokers by overdue balance in 2026-Q2.",
+            "Cross claim amount with exposure by broker_segment.",
+            "Which open claims require priority attention?",
+        ]
+    if "risk" in lowered or "riesgo" in lowered or "vencido" in lowered or "overdue" in lowered:
+        return [
+            "Show overdue balance by country and risk class.",
+            "Which risk class has the highest overdue balance / exposure ratio?",
+            "Compare risk classes A, B and C between 2026-Q1 and 2026-Q2.",
+        ]
+    return [
+        "Drill down by country and product_line for 2026-Q2.",
+        "Compare exposure, overdue balance and claims by broker_segment.",
+        "Where should the executive risk review focus?",
+    ]
+
+
 def build_dataset(
     question: str,
     answer: str,
@@ -176,6 +204,14 @@ def _narrative_visual_call(dataset_id: str) -> ComponentCall:
     )
 
 
+def _follow_up_call(question: str) -> ComponentCall:
+    """Chat-rendered follow-up chips that drive the next governed query."""
+    return ComponentCall(
+        "followUpQuestions",
+        {"title": "Continue the analysis", "questions": build_follow_up_questions(question)},
+    )
+
+
 def build_dataset_calls(
     question: str,
     answer: str,
@@ -209,6 +245,7 @@ def build_dataset_calls(
         return [
             ComponentCall("cacheDataset", narrative_dataset),
             _narrative_visual_call(dataset_id),
+            _follow_up_call(question),
         ]
 
     headers = [column["key"] for column in dataset["columns"]]
@@ -269,4 +306,7 @@ def build_dataset_calls(
                     },
                 )
             )
+
+    # Follow-up chips render in chat and drive the next governed query.
+    calls.append(_follow_up_call(question))
     return calls
