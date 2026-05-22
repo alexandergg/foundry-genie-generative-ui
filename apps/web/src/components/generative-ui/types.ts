@@ -72,13 +72,6 @@ export const RiskNarrativeCardProps = z.object({
 });
 export type RiskNarrativeCardProps = z.infer<typeof RiskNarrativeCardProps>;
 
-export const VisualizationPlanProps = z.object({
-  approach: z.string(),
-  technology: z.string(),
-  key_elements: z.array(z.string()),
-});
-export type VisualizationPlanProps = z.infer<typeof VisualizationPlanProps>;
-
 export const McpApprovalCardProps = z.object({
   requestId: z.string(),
   question: z.string(),

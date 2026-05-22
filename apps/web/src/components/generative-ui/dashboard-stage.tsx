@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { DatabricksGenieMark } from "../databricks-genie-mark";
 import { BarChartCard } from "./bar-chart-card";
 import { DonutChartCard } from "./donut-chart-card";
@@ -8,7 +8,7 @@ import { InsightTable } from "./insight-table";
 import { LineAreaChartCard } from "./line-area-chart-card";
 import { MetricComparisonChartCard } from "./metric-comparison-chart-card";
 import { RiskNarrativeCard } from "./risk-narrative-card";
-import { getDashboardSnapshot, setDashboardPlanning, subscribeDashboard } from "./dashboard-store";
+import { getDashboardSnapshot, subscribeDashboard } from "./dashboard-store";
 import { getProcessSnapshot, subscribeProcess } from "./process-store";
 import { getDataset, getDatasetsSnapshot, subscribeDatasets } from "./dataset-store";
 import { buildVisualProps, type DerivedProps } from "./dataset-derive";
@@ -130,12 +130,4 @@ export function DashboardStage() {
       )}
     </section>
   );
-}
-
-export function DashboardPlanBridge() {
-  useEffect(() => {
-    setDashboardPlanning();
-  }, []);
-
-  return <div className="chat-visual-sent">Preparing the visualization in the central panel…</div>;
 }

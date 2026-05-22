@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 CONTROLLED_COMPONENT_NAMES: tuple[str, ...] = (
-    "plan_visualization",
     "riskNarrativeCard",
     "insightTable",
     "metricComparisonChartCard",
