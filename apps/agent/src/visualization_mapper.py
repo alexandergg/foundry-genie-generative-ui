@@ -7,7 +7,9 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .component_registry import validate_component_name
-from .normalization import NormalizationWarning, build_visual_meta
+from .normalization import NormalizationWarning, build_dataset_provenance, build_visual_meta
+
+DEFAULT_PROVENANCE_SOURCE = "Azure AI Foundry + Databricks Genie"
 
 
 @dataclass
@@ -361,7 +363,14 @@ def build_component_calls(
     return calls
 
 
-def build_dataset(question: str, answer: str, trace_id: str | None = None) -> dict[str, Any] | None:
+def build_dataset(
+    question: str,
+    answer: str,
+    trace_id: str | None = None,
+    *,
+    source: str | None = None,
+    approval_request_id: str | None = None,
+) -> dict[str, Any] | None:
     """Capture the structured rows behind a Genie answer as a cacheable dataset."""
     headers, rows = extract_markdown_table(answer)
     if not rows:
@@ -387,6 +396,12 @@ def build_dataset(question: str, answer: str, trace_id: str | None = None) -> di
         "rows": rows,
         "answer": answer[:1800],
         "traceId": trace_id,
+        "provenance": build_dataset_provenance(
+            source=source or DEFAULT_PROVENANCE_SOURCE,
+            row_count=len(rows),
+            trace_id=trace_id,
+            approval_request_id=approval_request_id,
+        ),
     }
 
 
@@ -398,9 +413,16 @@ def _narrative_visual_call(dataset_id: str) -> ComponentCall:
     )
 
 
-def build_dataset_calls(question: str, answer: str, trace_id: str | None = None) -> list[ComponentCall]:
+def build_dataset_calls(
+    question: str,
+    answer: str,
+    trace_id: str | None = None,
+    *,
+    source: str | None = None,
+    approval_request_id: str | None = None,
+) -> list[ComponentCall]:
     """Cache the dataset once, then emit the executive summary plus derived-visual specs."""
-    dataset = build_dataset(question, answer, trace_id)
+    dataset = build_dataset(question, answer, trace_id, source=source, approval_request_id=approval_request_id)
     if dataset is None:
         # No table behind the answer: cache a narrative-only dataset so the
         # executive summary still renders as a dashboard card.
@@ -413,6 +435,13 @@ def build_dataset_calls(question: str, answer: str, trace_id: str | None = None)
             "rows": [],
             "answer": answer[:1800],
             "traceId": trace_id,
+            "provenance": build_dataset_provenance(
+                source=source or DEFAULT_PROVENANCE_SOURCE,
+                row_count=0,
+                trace_id=trace_id,
+                approval_request_id=approval_request_id,
+                warnings=[NormalizationWarning("no_structured_rows", "No structured rows were detected; narrative only.")],
+            ),
         }
         return [
             ComponentCall("cacheDataset", narrative_dataset),

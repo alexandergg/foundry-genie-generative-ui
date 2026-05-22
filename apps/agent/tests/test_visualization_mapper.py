@@ -67,6 +67,37 @@ def test_build_dataset_returns_none_without_rows() -> None:
     assert build_dataset("hello", "no table here") is None
 
 
+def test_build_dataset_attaches_governed_provenance() -> None:
+    dataset = build_dataset(
+        "exposure by country",
+        _DATASET_ANSWER,
+        trace_id="risk-abc",
+        source="Risk Exposure Warehouse",
+        approval_request_id="approval-123",
+    )
+    assert dataset is not None
+    provenance = dataset["provenance"]
+    assert provenance["source"] == "Risk Exposure Warehouse"
+    assert provenance["rowCount"] == 2
+    assert provenance["traceId"] == "risk-abc"
+    assert provenance["approvalRequestId"] == "approval-123"
+    assert provenance["generatedAt"].endswith("Z")
+    assert provenance["warnings"] == []
+
+
+def test_build_dataset_defaults_provenance_source() -> None:
+    dataset = build_dataset("exposure by country", _DATASET_ANSWER)
+    assert dataset is not None
+    assert dataset["provenance"]["source"] == "Azure AI Foundry + Databricks Genie"
+
+
+def test_build_dataset_calls_narrative_only_warns_no_rows() -> None:
+    calls = build_dataset_calls("Explain the demo", "No governed table is required.", trace_id="risk-xyz")
+    provenance = calls[0].args["provenance"]
+    assert provenance["rowCount"] == 0
+    assert provenance["warnings"][0]["code"] == "no_structured_rows"
+
+
 def test_extract_markdown_table_parses_currency_and_european_numbers() -> None:
     text = """
 | country | total_exposure_eur | loss_ratio |

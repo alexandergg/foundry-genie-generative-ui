@@ -29,7 +29,7 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 - Foundry conversation IDs are preserved so the agent can use previous Genie context.
 - Local session context can answer simple follow-ups from the last returned table without a new Genie call.
 - MCP approvals are handled after the user has approved governed data access in the UI.
-- Each visual may include provenance fields such as `source`, `generatedAt`, `approvalRequestId`, `traceId`, `rowCount`, and normalization warnings.
+- Provenance is captured once per Genie result on the cached dataset (`source`, `generatedAt`, `approvalRequestId`, `traceId`, `rowCount`, and normalization warnings); every visual derived from that dataset inherits it and stamps its own `visualId` when rendering the footer.
 - Application Insights is connected at both Foundry account and project scopes so prompt-agent and hosted-agent traces are visible from Foundry Traces and Azure Monitor.
 
 ## Main components

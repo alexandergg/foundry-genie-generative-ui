@@ -12,7 +12,7 @@ import {
   reorderVisuals,
   clearDashboard,
 } from "@/components/generative-ui/dashboard-store";
-import { Column, VISUAL_TYPES, ALL_VISUAL_TYPES, DatasetRow, type DerivableVisualType } from "@/components/generative-ui/dataset-types";
+import { Column, VISUAL_TYPES, ALL_VISUAL_TYPES, DatasetRow, DatasetProvenance, type DerivableVisualType } from "@/components/generative-ui/dataset-types";
 
 // addVisual may add the executive summary; changeVisualType only retargets derivable charts.
 const addVisualType = z.enum(ALL_VISUAL_TYPES);
@@ -74,7 +74,7 @@ function ClearBridge() {
 export function useDashboardTools() {
   useRenderTool({
     name: "cacheDataset",
-    parameters: z.object({ id: z.string(), title: z.string(), question: z.string(), columns: z.array(Column), rows: z.array(DatasetRow), answer: z.string().optional() }),
+    parameters: z.object({ id: z.string(), title: z.string(), question: z.string(), columns: z.array(Column), rows: z.array(DatasetRow), answer: z.string().optional(), traceId: z.string().optional(), provenance: DatasetProvenance.optional() }),
     render: ({ parameters }) => <CacheDatasetBridge args={parameters as CacheDatasetArgs} />,
   });
   useRenderTool({

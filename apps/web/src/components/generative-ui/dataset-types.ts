@@ -17,6 +17,18 @@ export type Column = z.infer<typeof Column>;
 export const DatasetRow = z.record(z.union([z.string(), z.number(), z.null()]));
 export type DatasetRow = z.infer<typeof DatasetRow>;
 
+// Governance trail for one Genie result. Shared by every visual derived from
+// the dataset; each card adds its own `visualId` when it renders the footer.
+export const DatasetProvenance = z.object({
+  source: z.string(),
+  generatedAt: z.string(),
+  rowCount: z.number(),
+  approvalRequestId: z.string().optional(),
+  traceId: z.string().optional(),
+  warnings: z.array(z.object({ code: z.string(), message: z.string() })).default([]),
+});
+export type DatasetProvenance = z.infer<typeof DatasetProvenance>;
+
 export const Dataset = z.object({
   id: z.string(),
   title: z.string(),
@@ -26,6 +38,7 @@ export const Dataset = z.object({
   // Genie's prose answer behind the dataset, rendered as the executive summary.
   answer: z.string().optional(),
   traceId: z.string().optional(),
+  provenance: DatasetProvenance.optional(),
   createdAt: z.number(),
 });
 export type Dataset = z.infer<typeof Dataset>;

@@ -71,6 +71,33 @@ describe("dataset-derive", () => {
     expect(props.title).toBe("T");
   });
 
+  it("propagates dataset provenance to each visual, stamping the per-visual id", () => {
+    const ds: Dataset = {
+      ...dataset,
+      provenance: {
+        source: "Risk Exposure Warehouse",
+        generatedAt: "2026-05-22T00:00:00Z",
+        rowCount: 3,
+        approvalRequestId: "approval-abc",
+        traceId: "risk-xyz",
+        warnings: [],
+      },
+    };
+    const props = buildVisualProps(ds, spec({ id: "v-bar", type: "barChartCard" })) as BarChartCardProps;
+    expect(props.provenance).toMatchObject({
+      visualId: "v-bar",
+      source: "Risk Exposure Warehouse",
+      rowCount: 3,
+      approvalRequestId: "approval-abc",
+      traceId: "risk-xyz",
+    });
+  });
+
+  it("leaves provenance undefined when the dataset has none", () => {
+    const props = buildVisualProps(dataset, spec({ type: "barChartCard" })) as BarChartCardProps;
+    expect(props.provenance).toBeUndefined();
+  });
+
   it("detects time-like dimensions", () => {
     expect(isTimeLike(["2025-Q1", "2025-Q2"])).toBe(true);
     expect(isTimeLike(["ES", "FR"])).toBe(false);

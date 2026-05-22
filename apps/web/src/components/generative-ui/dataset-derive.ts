@@ -6,6 +6,7 @@ import type {
   LineAreaChartCardProps,
   MetricComparisonChartCardProps,
   RiskNarrativeCardProps,
+  VisualProvenance,
 } from "./types";
 
 export type DerivedProps =
@@ -41,15 +42,21 @@ function asMeasures(measure: VisualSpec["measure"]): string[] {
   return Array.isArray(measure) ? measure : [measure];
 }
 
+// One Genie result = one governance trail; each card stamps its own visualId.
+function provenanceFor(dataset: Dataset, spec: VisualSpec): VisualProvenance | undefined {
+  return dataset.provenance ? { ...dataset.provenance, visualId: spec.id } : undefined;
+}
+
 export function buildVisualProps(dataset: Dataset, spec: VisualSpec): DerivedProps {
   const dim = spec.dimension ?? dataset.columns.find((c) => c.role === "dimension")?.key ?? "";
   const measures = asMeasures(spec.measure);
   const primary = measures[0] ?? dataset.columns.find((c) => c.role === "measure")?.key ?? "";
   const fmt = dataset.columns.find((c) => c.key === primary)?.format ?? "number";
+  const provenance = provenanceFor(dataset, spec);
 
   switch (spec.type) {
     case "barChartCard":
-      return { title: spec.title, data: groupSum(dataset.rows, dim, primary), xKey: dim, yKey: primary, valueFormat: fmt };
+      return { title: spec.title, data: groupSum(dataset.rows, dim, primary), xKey: dim, yKey: primary, valueFormat: fmt, provenance };
     case "donutChartCard":
       return {
         title: spec.title,
@@ -57,6 +64,7 @@ export function buildVisualProps(dataset: Dataset, spec: VisualSpec): DerivedPro
         labelKey: dim,
         valueKey: primary,
         valueFormat: fmt,
+        provenance,
       };
     case "lineAreaChartCard":
       return {
@@ -65,6 +73,7 @@ export function buildVisualProps(dataset: Dataset, spec: VisualSpec): DerivedPro
         xKey: dim,
         yKeys: (measures.length ? measures : [primary]).slice(0, 3),
         valueFormat: fmt,
+        provenance,
       };
     case "metricComparisonChartCard":
       return {
@@ -73,14 +82,16 @@ export function buildVisualProps(dataset: Dataset, spec: VisualSpec): DerivedPro
         xKey: dim,
         yKeys: (measures.length >= 2 ? measures : dataset.columns.filter((c) => c.role === "measure").map((c) => c.key)).slice(0, 3),
         valueFormat: fmt,
+        provenance,
       };
     case "insightTable":
-      return { title: spec.title, columns: dataset.columns.map((c) => c.key), rows: dataset.rows.slice(0, 12) };
+      return { title: spec.title, columns: dataset.columns.map((c) => c.key), rows: dataset.rows.slice(0, 12), provenance };
     case "riskNarrativeCard":
       return {
         title: spec.title,
         answer: dataset.answer ?? "",
         assumptions: ["Data queried through the real Foundry/Genie agent"],
+        provenance,
       };
   }
 }

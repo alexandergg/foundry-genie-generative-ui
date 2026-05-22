@@ -231,9 +231,16 @@ def _render_component_messages(
     question: str,
     response: FoundryAgentResponse,
     trace_id: str | None = None,
+    approval_request_id: str | None = None,
 ) -> list[AnyMessage]:
     messages: list[AnyMessage] = []
-    calls = build_dataset_calls(question, response.answer, trace_id)
+    calls = build_dataset_calls(
+        question,
+        response.answer,
+        trace_id,
+        source=settings.databricks_sql_warehouse_name or None,
+        approval_request_id=approval_request_id,
+    )
     for call in calls:
         messages.extend(_component_message(call.name, call.args))
     return messages
@@ -389,7 +396,7 @@ async def _execute_risk_query(question: str, conversation_id: str | None, approv
         await _emit_ui_event("normalization.completed", "normalize", {"message": "Genie results normalized into governed records."})
         await _emit_ui_event("query.completed", "query", {"message": "Governed query completed.", "traceId": trace_id})
         await _emit_ui_event("visualization.proposed", "visualize", {"message": "Proposing controlled visualizations for the result."})
-        messages.extend(_render_component_messages(question, response, trace_id))
+        messages.extend(_render_component_messages(question, response, trace_id, approval_request_id))
         await _emit_ui_event("visualization.rendered", "visualize", {"message": "Controlled visualizations rendered."})
         await _emit_ui_event("followups.suggested", "complete", {"message": "Suggested grounded follow-up questions."})
         await _emit_ui_event(
