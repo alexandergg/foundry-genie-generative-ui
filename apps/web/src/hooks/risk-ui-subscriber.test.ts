@@ -9,7 +9,7 @@ function spyHandlers() {
     applyUiEvent: vi.fn(),
     finishRun: vi.fn(),
     failRun: vi.fn(),
-    onQueryStarted: vi.fn(),
+    onGovernedFlowStarted: vi.fn(),
   };
 }
 
@@ -32,15 +32,16 @@ describe("makeRiskUiSubscriber", () => {
     expect(handlers.applyUiEvent).toHaveBeenCalledWith({ kind: "query.started", phase: "query" });
   });
 
-  it("signals onQueryStarted only for query.started events", () => {
-    expect(emitCustom({ kind: "query.started", phase: "query" }).onQueryStarted).toHaveBeenCalledTimes(1);
-    expect(emitCustom({ kind: "reasoning.started", phase: "supervise" }).onQueryStarted).not.toHaveBeenCalled();
+  it("signals onGovernedFlowStarted on plan.created and query.started, not on plain reasoning", () => {
+    expect(emitCustom({ kind: "plan.created", phase: "supervise" }).onGovernedFlowStarted).toHaveBeenCalledTimes(1);
+    expect(emitCustom({ kind: "query.started", phase: "query" }).onGovernedFlowStarted).toHaveBeenCalledTimes(1);
+    expect(emitCustom({ kind: "reasoning.started", phase: "supervise" }).onGovernedFlowStarted).not.toHaveBeenCalled();
   });
 
   it("ignores custom events with a different name", () => {
     const handlers = emitCustom({ kind: "query.started" }, "other_event");
     expect(handlers.applyUiEvent).not.toHaveBeenCalled();
-    expect(handlers.onQueryStarted).not.toHaveBeenCalled();
+    expect(handlers.onGovernedFlowStarted).not.toHaveBeenCalled();
   });
 
   it("finishes the run on onRunFinalized", () => {
@@ -56,27 +57,32 @@ describe("makeRiskUiSubscriber", () => {
   });
 });
 
-describe("default onQueryStarted (planning skeleton)", () => {
+describe("default onGovernedFlowStarted (planning skeleton)", () => {
   beforeEach(() => resetDashboardStore());
 
   function spec(over: Partial<VisualSpec>): VisualSpec {
     return { id: "v", datasetId: "a", type: "barChartCard", title: "T", order: 0, ...over };
   }
 
-  function fireQueryStarted() {
+  function fire(kind: string) {
     makeRiskUiSubscriber().onCustomEvent?.({
-      event: { name: "risk_ui_event", value: { kind: "query.started", phase: "query" } },
+      event: { name: "risk_ui_event", value: { kind, phase: "supervise" } },
     } as never);
   }
 
-  it("switches an empty canvas to planning so the loading skeleton shows", () => {
-    fireQueryStarted();
+  it("switches an empty canvas to planning on plan.created, before the query runs", () => {
+    fire("plan.created");
+    expect(getDashboardSnapshot().phase).toBe("planning");
+  });
+
+  it("switches an empty canvas to planning on query.started", () => {
+    fire("query.started");
     expect(getDashboardSnapshot().phase).toBe("planning");
   });
 
   it("keeps accumulated visuals instead of wiping them on a follow-up query", () => {
     addVisual(spec({ id: "v1" }));
-    fireQueryStarted();
+    fire("query.started");
     const snapshot = getDashboardSnapshot();
     expect(snapshot.phase).toBe("ready");
     expect(snapshot.visuals).toHaveLength(1);

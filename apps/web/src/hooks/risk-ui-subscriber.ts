@@ -9,15 +9,15 @@ export interface RiskUiSubscriberHandlers {
   applyUiEvent: (value: unknown) => void;
   finishRun: () => void;
   failRun: () => void;
-  onQueryStarted: () => void;
+  onGovernedFlowStarted: () => void;
 }
 
-// `query.started` is the agent's signal that a governed Genie query is running
-// and visuals are coming. If the canvas is still empty, switch it to the planning
-// skeleton so the live status timeline is visible. Accumulated dashboards keep
-// their visuals (the timeline already renders above them), so we never wipe prior
-// results mid-conversation.
-function defaultOnQueryStarted(): void {
+// A governed Genie flow is underway and visuals are coming. If the canvas is
+// still empty, switch it to the planning skeleton so the live status timeline is
+// visible — including through the human-approval wait, before the query runs.
+// Accumulated dashboards keep their visuals (the timeline already renders above
+// them), so we never wipe prior results mid-conversation.
+function defaultOnGovernedFlowStarted(): void {
   if (getDashboardSnapshot().visuals.length === 0) setDashboardPlanning();
 }
 
@@ -26,11 +26,20 @@ const defaultHandlers: RiskUiSubscriberHandlers = {
   applyUiEvent,
   finishRun,
   failRun,
-  onQueryStarted: defaultOnQueryStarted,
+  onGovernedFlowStarted: defaultOnGovernedFlowStarted,
 };
 
-function isQueryStarted(value: unknown): boolean {
-  return typeof value === "object" && value !== null && (value as { kind?: unknown }).kind === "query.started";
+// Earliest signals that governed visuals are on the way: `plan.created` once the
+// supervisor commits to the risk-data route, and `query.started` for the direct
+// `approve <id>` path that skips planning. We deliberately do NOT trigger on
+// run-start or `reasoning.started`, which also fire for greetings/direct answers
+// and would strand a loading skeleton on a turn that produces no visuals.
+const GOVERNED_FLOW_KINDS = new Set(["plan.created", "query.started"]);
+
+function signalsGovernedFlow(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return false;
+  const kind = (value as { kind?: unknown }).kind;
+  return typeof kind === "string" && GOVERNED_FLOW_KINDS.has(kind);
 }
 
 /**
@@ -44,7 +53,7 @@ export function makeRiskUiSubscriber(handlers: RiskUiSubscriberHandlers = defaul
     onCustomEvent: ({ event }) => {
       if (event.name !== RISK_UI_EVENT) return;
       handlers.applyUiEvent(event.value);
-      if (isQueryStarted(event.value)) handlers.onQueryStarted();
+      if (signalsGovernedFlow(event.value)) handlers.onGovernedFlowStarted();
     },
     onRunFinalized: () => handlers.finishRun(),
     onRunFailed: () => handlers.failRun(),
