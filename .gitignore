@@ -40,5 +40,8 @@ apps/agent/.env
 # Internal workflow artifacts (not for public repo)
 docs/superpowers/
 
+# Local-only tooling (latency benchmark, kept out of the repo)
+scripts/bench_supervisor_latency.py
+
 # TS build cache
 *.tsbuildinfo
