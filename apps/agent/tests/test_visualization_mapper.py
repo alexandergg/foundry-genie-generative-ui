@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from src.visualization_mapper import (
-    build_component_calls,
     build_dataset,
     build_dataset_calls,
     extract_bullet_metrics,
@@ -122,103 +121,4 @@ def test_extract_bullet_metrics_uses_question_metric() -> None:
     assert rows == [
         {"label": "Broker A", "total_claim_amount_eur": 10_000.0},
         {"label": "Broker B", "total_claim_amount_eur": 7_500.0},
-    ]
-
-
-def test_build_component_calls_adds_controlled_visualizations() -> None:
-    answer = """
-| broker | total_exposure_eur | total_claim_amount_eur |
-| --- | ---: | ---: |
-| Broker A | 1000 | 100 |
-| Broker B | 2000 | 150 |
-"""
-
-    calls = build_component_calls("compare exposure and claims by broker", answer, "Risk Exposure Warehouse")
-    names = [call.name for call in calls]
-
-    assert names[:2] == ["plan_visualization", "riskNarrativeCard"]
-    assert "insightTable" in names
-    assert "kpiStrip" in names
-    assert "metricComparisonChartCard" in names
-    assert "policyBreachCard" in names
-    assert "followUpQuestions" in names
-
-
-def test_build_component_calls_without_rows_keeps_safe_narrative_only() -> None:
-    calls = build_component_calls("Explain the demo", "No governed table is required for this explanation.")
-    names = [call.name for call in calls]
-
-    assert names == ["plan_visualization", "riskNarrativeCard", "followUpQuestions"]
-
-
-def test_build_component_calls_limits_table_and_chart_rows() -> None:
-    rows = "\n".join(f"| Broker {index} | {index * 1000} |" for index in range(1, 16))
-    answer = f"""
-| broker | total_exposure_eur |
-| --- | ---: |
-{rows}
-"""
-
-    calls = build_component_calls("Show exposure by broker", answer)
-    table = next(call for call in calls if call.name == "insightTable")
-    bar = next(call for call in calls if call.name == "barChartCard")
-    donut = next(call for call in calls if call.name == "donutChartCard")
-
-    assert len(table.args["rows"]) == 12
-    assert len(bar.args["data"]) == 10
-    assert len(donut.args["data"]) == 8
-
-
-def test_build_component_calls_handles_numeric_first_column_without_charts() -> None:
-    answer = """
-| rank | total_exposure_eur |
-| ---: | ---: |
-| 1 | 1000 |
-| 2 | 2000 |
-"""
-
-    calls = build_component_calls("Show ranked exposure", answer)
-    names = [call.name for call in calls]
-
-    assert "insightTable" in names
-    assert "kpiStrip" not in names
-    assert "barChartCard" not in names
-
-
-def test_build_component_calls_adds_visual_provenance() -> None:
-    answer = """
-| broker | total_exposure_eur |
-| --- | ---: |
-| Broker A | 1000 |
-| Broker B | 2000 |
-"""
-
-    calls = build_component_calls(
-        "Show exposure by broker",
-        answer,
-        "Risk Warehouse",
-        approval_request_id="abc123",
-        trace_id="trace-1",
-    )
-    table = next(call for call in calls if call.name == "insightTable")
-    policy = next(call for call in calls if call.name == "policyBreachCard")
-    provenance = table.args["provenance"]
-
-    assert policy.args["metricLabel"] == "Total Exposure Eur"
-    assert policy.args["metricValue"] == 2000.0
-    assert provenance["visualId"] == "insightTable-2"
-    assert provenance["source"] == "Risk Warehouse"
-    assert provenance["approvalRequestId"] == "abc123"
-    assert provenance["traceId"] == "trace-1"
-    assert provenance["rowCount"] == 2
-    assert provenance["warnings"] == []
-
-
-def test_build_component_calls_warns_when_no_structured_rows() -> None:
-    calls = build_component_calls("Explain risk", "No table was returned.")
-    narrative = next(call for call in calls if call.name == "riskNarrativeCard")
-
-    assert narrative.args["provenance"]["rowCount"] == 0
-    assert narrative.args["provenance"]["warnings"] == [
-        {"code": "no_structured_rows", "message": "No structured rows were detected; narrative only."}
     ]

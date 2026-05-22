@@ -6,7 +6,7 @@ import pytest
 
 from src.component_registry import CONTROLLED_COMPONENT_NAMES, validate_component_name
 from src.ui_event_contract import UI_EVENT_SCHEMA_VERSION, build_ui_event
-from src.visualization_mapper import build_component_calls
+from src.visualization_mapper import build_dataset_calls
 
 
 def test_visualization_mapper_only_emits_registered_components() -> None:
@@ -16,7 +16,7 @@ def test_visualization_mapper_only_emits_registered_components() -> None:
 | Broker A | 1000 | 100 |
 """
 
-    calls = build_component_calls("compare exposure and claims by broker", answer)
+    calls = build_dataset_calls("compare exposure and claims by broker", answer)
 
     assert {call.name for call in calls}.issubset(set(CONTROLLED_COMPONENT_NAMES))
 

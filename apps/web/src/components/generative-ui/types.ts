@@ -16,18 +16,6 @@ export const VisualProvenance = z.object({
 });
 export type VisualProvenance = z.infer<typeof VisualProvenance>;
 
-export const KpiStripProps = z.object({
-  items: z.array(z.object({
-    label: z.string(),
-    value: z.union([z.string(), z.number()]),
-    format: Format.optional(),
-    status: z.enum(["stable", "attention", "critical"]).optional(),
-    delta: z.string().optional(),
-  })),
-  provenance: VisualProvenance.optional(),
-});
-export type KpiStripProps = z.infer<typeof KpiStripProps>;
-
 export const BarChartCardProps = z.object({
   title: z.string(),
   data: z.array(ChartRow),
@@ -90,23 +78,6 @@ export const VisualizationPlanProps = z.object({
   key_elements: z.array(z.string()),
 });
 export type VisualizationPlanProps = z.infer<typeof VisualizationPlanProps>;
-
-export const WarehouseStatusCardProps = z.object({
-  warehouseName: z.string(),
-  status: z.string(),
-});
-export type WarehouseStatusCardProps = z.infer<typeof WarehouseStatusCardProps>;
-
-export const PolicyBreachCardProps = z.object({
-  title: z.string(),
-  severity: z.enum(["stable", "attention", "critical"]),
-  summary: z.string(),
-  metricLabel: z.string(),
-  metricValue: z.union([z.string(), z.number()]),
-  recommendation: z.string(),
-  provenance: VisualProvenance.optional(),
-});
-export type PolicyBreachCardProps = z.infer<typeof PolicyBreachCardProps>;
 
 export const McpApprovalCardProps = z.object({
   requestId: z.string(),

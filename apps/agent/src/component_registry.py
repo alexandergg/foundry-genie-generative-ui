@@ -3,14 +3,11 @@ from __future__ import annotations
 CONTROLLED_COMPONENT_NAMES: tuple[str, ...] = (
     "plan_visualization",
     "riskNarrativeCard",
-    "warehouseStatusCard",
     "insightTable",
-    "kpiStrip",
     "metricComparisonChartCard",
     "lineAreaChartCard",
     "donutChartCard",
     "barChartCard",
-    "policyBreachCard",
     "mcpApprovalCard",
     "followUpQuestions",
     # Dashboard frontend tools (agent-invoked, handled client-side)
