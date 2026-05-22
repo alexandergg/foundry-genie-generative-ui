@@ -220,13 +220,17 @@ def build_dataset_calls(
         _narrative_visual_call(dataset["id"]),
     ]
 
-    if label_key and value_key:
-        calls.append(
-            ComponentCall(
-                "addVisual",
-                {"datasetId": dataset["id"], "type": "insightTable", "title": f"Details · {_humanize(label_key)}"},
-            )
+    # Always surface the rows as a table, even when no categorical dimension was
+    # detected (all-numeric / ranked results); the charts below still need one.
+    table_title = f"Details · {_humanize(label_key)}" if label_key else "Details"
+    calls.append(
+        ComponentCall(
+            "addVisual",
+            {"datasetId": dataset["id"], "type": "insightTable", "title": table_title},
         )
+    )
+
+    if label_key and value_key:
         calls.append(
             ComponentCall(
                 "addVisual",

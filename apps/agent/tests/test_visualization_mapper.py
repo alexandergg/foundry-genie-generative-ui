@@ -52,6 +52,23 @@ def test_build_dataset_calls_emit_executive_summary_first() -> None:
     }
 
 
+def test_build_dataset_calls_emit_table_for_numeric_only_dimension() -> None:
+    # All columns numeric (ranked result) → no categorical dimension, so _pick_keys
+    # returns no label_key. The rows must still be shown as a table; charts are skipped.
+    answer = """
+| rank | total_exposure_eur |
+| ---: | ---: |
+| 1 | 1000 |
+| 2 | 2000 |
+"""
+    calls = build_dataset_calls("Show ranked exposure", answer)
+    types = [call.args.get("type") for call in calls if call.name == "addVisual"]
+    assert "insightTable" in types
+    assert "barChartCard" not in types
+    assert "donutChartCard" not in types
+    assert "lineAreaChartCard" not in types
+
+
 def test_build_dataset_calls_without_table_keeps_narrative_card() -> None:
     calls = build_dataset_calls("Explain the demo", "No governed table is required.", trace_id="risk-xyz")
     names = [call.name for call in calls]
