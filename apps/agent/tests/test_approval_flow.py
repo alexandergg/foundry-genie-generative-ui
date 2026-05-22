@@ -244,6 +244,19 @@ async def test_supervisor_routes_greeting_through_the_llm(monkeypatch: pytest.Mo
     assert seen == ["Hi!"]
 
 
+async def test_supervisor_falls_back_to_direct_when_supervise_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The supervisor is the graph entry node and calls a network LLM; a transient
+    # failure must not crash the run — it falls back to a direct response.
+    def boom(messages: list[Any], has_foundry_conversation: bool = False) -> RouteDecision:
+        raise RuntimeError("Foundry unavailable")
+
+    monkeypatch.setattr(main.foundry_client, "supervise", boom)
+
+    result = await main.supervise_request({"messages": [HumanMessage(content="Hi!")]})
+
+    assert result["route"] == "direct"
+
+
 async def test_risk_data_node_still_requires_approval() -> None:
     result = await main.run_risk({"messages": [HumanMessage(content="Show the top 5 brokers by claim amount")], "route": "risk_data"})
 

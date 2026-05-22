@@ -259,11 +259,27 @@ async def supervise_request(state: AgentState) -> dict[str, Any]:
         "supervise",
         {"message": "Thinking about whether this needs governed risk data…"},
     )
-    decision: RouteDecision = await asyncio.to_thread(
-        foundry_client.supervise,
-        messages,
-        bool(_conversation_id(state)),
-    )
+    try:
+        decision: RouteDecision = await asyncio.to_thread(
+            foundry_client.supervise,
+            messages,
+            bool(_conversation_id(state)),
+        )
+    except Exception as exc:
+        # The supervisor is a network LLM call and this is the graph entry node:
+        # an unhandled error here fails the entire run. Fall back to a direct
+        # response (every downstream node handles failure safely) so a transient
+        # Foundry/Azure error on a trivial message can't kill the whole turn.
+        await _emit_ui_event(
+            "reasoning.completed",
+            "supervise",
+            {
+                "message": "Supervisor routing unavailable; answering directly.",
+                "route": "direct",
+                "errorType": type(exc).__name__,
+            },
+        )
+        return {"route": "direct"}
     await _emit_ui_event(
         "reasoning.completed",
         "supervise",
