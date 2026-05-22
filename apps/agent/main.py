@@ -133,11 +133,6 @@ def _approval_command(message: str) -> ApprovalCommand | None:
     return None
 
 
-def _simple_direct_greeting(message: str) -> bool:
-    normalized = re.sub(r"[^a-záéíóúüñ]+", " ", message.lower()).strip()
-    return normalized in {"hi", "hello", "hey", "hola", "buenas", "buenos dias", "buenas tardes", "buenas noches"}
-
-
 def _purge_stale_approvals(now: datetime | None = None) -> None:
     now = now or datetime.now(timezone.utc)
     max_age = timedelta(minutes=2 * APPROVAL_TTL_MINUTES)
@@ -258,13 +253,6 @@ async def supervise_request(state: AgentState) -> dict[str, Any]:
         return {"route": "direct"}
     if _approval_command(question):
         return {"route": "risk_data"}
-    if _simple_direct_greeting(question):
-        await _emit_ui_event(
-            "reasoning.completed",
-            "supervise",
-            {"message": "Greeting detected. Answering directly without governed data.", "route": "direct"},
-        )
-        return {"route": "direct"}
 
     await _emit_ui_event(
         "reasoning.started",

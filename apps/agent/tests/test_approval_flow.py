@@ -227,15 +227,21 @@ async def test_supervisor_routes_concrete_risk_question_to_genie(monkeypatch: py
     assert result["route"] == "risk_data"
 
 
-async def test_supervisor_routes_simple_greeting_without_foundry_json(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fail_supervise(messages: list[Any], has_foundry_conversation: bool = False) -> RouteDecision:
-        raise AssertionError("Simple greetings should not call the JSON-routing supervisor")
+async def test_supervisor_routes_greeting_through_the_llm(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Routing is fully LLM-driven: greetings are no longer short-circuited by a
+    # heuristic, so the supervisor model decides the route for them too.
+    seen: list[str] = []
 
-    monkeypatch.setattr(main.foundry_client, "supervise", fail_supervise)
+    def supervise(messages: list[Any], has_foundry_conversation: bool = False) -> RouteDecision:
+        seen.append(messages[-1].content)
+        return RouteDecision(route="direct", direct_answer=None, rationale="Greeting, no governed data needed.")
+
+    monkeypatch.setattr(main.foundry_client, "supervise", supervise)
 
     result = await main.supervise_request({"messages": [HumanMessage(content="Hi!")]})
 
     assert result["route"] == "direct"
+    assert seen == ["Hi!"]
 
 
 async def test_risk_data_node_still_requires_approval() -> None:
