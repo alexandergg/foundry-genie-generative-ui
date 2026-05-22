@@ -3,7 +3,15 @@
 import { useEffect } from "react";
 import { useRenderTool } from "@copilotkit/react-core/v2";
 import { z } from "zod";
-import { datasetFromArgs, visualSpecFromArgs, type AddVisualArgs, type CacheDatasetArgs } from "./dashboard-tools";
+import {
+  CacheDatasetParams,
+  AddVisualParams,
+  RemoveVisualParams,
+  ChangeVisualTypeParams,
+  ReorderVisualsParams,
+  safeDatasetFromArgs,
+  safeVisualSpecFromArgs,
+} from "./dashboard-tools";
 import { putDataset } from "@/components/generative-ui/dataset-store";
 import {
   addVisual,
@@ -12,55 +20,61 @@ import {
   reorderVisuals,
   clearDashboard,
 } from "@/components/generative-ui/dashboard-store";
-import { Column, VISUAL_TYPES, ALL_VISUAL_TYPES, DatasetRow, DatasetProvenance, type DerivableVisualType } from "@/components/generative-ui/dataset-types";
-
-// addVisual may add the executive summary; changeVisualType only retargets derivable charts.
-const addVisualType = z.enum(ALL_VISUAL_TYPES);
-const derivableVisualType = z.enum(VISUAL_TYPES);
 
 function Chip({ text }: { text: string }) {
   return <div className="chat-visual-sent">{text}</div>;
 }
 
+function readString(args: unknown, key: string): string | undefined {
+  const value = (args as Record<string, unknown> | null | undefined)?.[key];
+  return typeof value === "string" ? value : undefined;
+}
+
 // The agent emits these as resolved tool calls (tool_call + ToolMessage), so
-// CopilotKit RENDERS them — it does not execute a handler. Each bridge applies
-// its store side-effect on render. Mutations replace/no-op by id, so repeated
+// CopilotKit RENDERS them — it does not execute a handler, and it does NOT parse
+// the args against the schema. Each bridge therefore validates the raw args with
+// its schema and only mutates the store on a full, valid parse; mid-stream or
+// malformed payloads are skipped. Mutations replace/no-op by id, so repeated
 // renders are idempotent.
 
-function CacheDatasetBridge({ args }: { args: CacheDatasetArgs }) {
+function CacheDatasetBridge({ args }: { args: unknown }) {
   useEffect(() => {
-    if (args?.id && Array.isArray(args.rows)) putDataset(datasetFromArgs(args));
+    const dataset = safeDatasetFromArgs(args);
+    if (dataset) putDataset(dataset);
   }, [args]);
-  return <Chip text={`Cached ${args?.rows?.length ?? 0} rows`} />;
+  const rows = (args as { rows?: unknown })?.rows;
+  return <Chip text={`Cached ${Array.isArray(rows) ? rows.length : 0} rows`} />;
 }
 
-function AddVisualBridge({ args }: { args: AddVisualArgs }) {
+function AddVisualBridge({ args }: { args: unknown }) {
   useEffect(() => {
-    if (args?.datasetId && args?.type) addVisual(visualSpecFromArgs(args));
+    const spec = safeVisualSpecFromArgs(args);
+    if (spec) addVisual(spec);
   }, [args]);
-  return <Chip text={`Added ${args?.type ?? "visual"}`} />;
+  return <Chip text={`Added ${readString(args, "type") ?? "visual"}`} />;
 }
 
-function RemoveVisualBridge({ id }: { id: string }) {
+function RemoveVisualBridge({ args }: { args: unknown }) {
   useEffect(() => {
-    if (id) removeVisual(id);
-  }, [id]);
+    const parsed = RemoveVisualParams.safeParse(args);
+    if (parsed.success) removeVisual(parsed.data.id);
+  }, [args]);
   return <Chip text="Removed visual" />;
 }
 
-function ChangeTypeBridge({ id, type }: { id: string; type: DerivableVisualType }) {
+function ChangeTypeBridge({ args }: { args: unknown }) {
   useEffect(() => {
-    if (id && type) changeVisualType(id, type);
-  }, [id, type]);
-  return <Chip text={`Changed to ${type}`} />;
+    const parsed = ChangeVisualTypeParams.safeParse(args);
+    if (parsed.success) changeVisualType(parsed.data.id, parsed.data.type);
+  }, [args]);
+  return <Chip text={`Changed to ${readString(args, "type") ?? "visual"}`} />;
 }
 
-function ReorderBridge({ orderedIds }: { orderedIds: string[] }) {
-  const key = orderedIds?.join(",");
+function ReorderBridge({ args }: { args: unknown }) {
   useEffect(() => {
-    if (orderedIds?.length) reorderVisuals(orderedIds);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+    const parsed = ReorderVisualsParams.safeParse(args);
+    if (parsed.success && parsed.data.orderedIds.length) reorderVisuals(parsed.data.orderedIds);
+  }, [args]);
   return <Chip text="Reordered" />;
 }
 
@@ -74,34 +88,28 @@ function ClearBridge() {
 export function useDashboardTools() {
   useRenderTool({
     name: "cacheDataset",
-    parameters: z.object({ id: z.string(), title: z.string(), question: z.string(), columns: z.array(Column), rows: z.array(DatasetRow), answer: z.string().optional(), traceId: z.string().optional(), provenance: DatasetProvenance.optional() }),
-    render: ({ parameters }) => <CacheDatasetBridge args={parameters as CacheDatasetArgs} />,
+    parameters: CacheDatasetParams,
+    render: ({ parameters }) => <CacheDatasetBridge args={parameters} />,
   });
   useRenderTool({
     name: "addVisual",
-    parameters: z.object({
-      datasetId: z.string(),
-      type: addVisualType,
-      dimension: z.string().optional(),
-      measure: z.union([z.string(), z.array(z.string())]).optional(),
-      title: z.string(),
-    }),
-    render: ({ parameters }) => <AddVisualBridge args={parameters as AddVisualArgs} />,
+    parameters: AddVisualParams,
+    render: ({ parameters }) => <AddVisualBridge args={parameters} />,
   });
   useRenderTool({
     name: "removeVisual",
-    parameters: z.object({ id: z.string() }),
-    render: ({ parameters }) => <RemoveVisualBridge id={parameters?.id ?? ""} />,
+    parameters: RemoveVisualParams,
+    render: ({ parameters }) => <RemoveVisualBridge args={parameters} />,
   });
   useRenderTool({
     name: "changeVisualType",
-    parameters: z.object({ id: z.string(), type: derivableVisualType }),
-    render: ({ parameters }) => <ChangeTypeBridge id={parameters?.id ?? ""} type={parameters?.type as DerivableVisualType} />,
+    parameters: ChangeVisualTypeParams,
+    render: ({ parameters }) => <ChangeTypeBridge args={parameters} />,
   });
   useRenderTool({
     name: "reorderVisuals",
-    parameters: z.object({ orderedIds: z.array(z.string()) }),
-    render: ({ parameters }) => <ReorderBridge orderedIds={parameters?.orderedIds ?? []} />,
+    parameters: ReorderVisualsParams,
+    render: ({ parameters }) => <ReorderBridge args={parameters} />,
   });
   useRenderTool({
     name: "clearDashboard",

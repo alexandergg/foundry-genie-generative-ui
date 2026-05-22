@@ -1,11 +1,45 @@
-import type { Dataset, DerivableVisualType, VisualSpec } from "@/components/generative-ui/dataset-types";
+import { z } from "zod";
+import {
+  Column,
+  DatasetRow,
+  DatasetProvenance,
+  VISUAL_TYPES,
+  ALL_VISUAL_TYPES,
+  type Dataset,
+  type DerivableVisualType,
+  type VisualSpec,
+} from "@/components/generative-ui/dataset-types";
 
-export type CacheDatasetArgs = Omit<Dataset, "createdAt" | "traceId"> & { traceId?: string };
-export type AddVisualArgs = Omit<VisualSpec, "id" | "order">;
+// Tool-call parameter schemas. CopilotKit hands the bridges the raw streamed
+// JSON (it does NOT parse against the schema passed to useRenderTool), so these
+// are both advertised to the agent AND enforced on the incoming args before any
+// store mutation. Validating here is what actually applies the defaults/coercions
+// (e.g. provenance.warnings -> []) and rejects partial mid-stream payloads.
+export const CacheDatasetParams = z.object({
+  id: z.string(),
+  title: z.string(),
+  question: z.string(),
+  columns: z.array(Column),
+  rows: z.array(DatasetRow),
+  answer: z.string().optional(),
+  traceId: z.string().optional(),
+  provenance: DatasetProvenance.optional(),
+});
 
-export function datasetFromArgs(args: CacheDatasetArgs): Dataset {
-  return { ...args, createdAt: Date.now() };
-}
+export const AddVisualParams = z.object({
+  datasetId: z.string(),
+  type: z.enum(ALL_VISUAL_TYPES),
+  dimension: z.string().optional(),
+  measure: z.union([z.string(), z.array(z.string())]).optional(),
+  title: z.string(),
+});
+
+export const RemoveVisualParams = z.object({ id: z.string() });
+export const ChangeVisualTypeParams = z.object({ id: z.string(), type: z.enum(VISUAL_TYPES) });
+export const ReorderVisualsParams = z.object({ orderedIds: z.array(z.string()) });
+
+export type CacheDatasetArgs = z.infer<typeof CacheDatasetParams>;
+export type AddVisualArgs = z.infer<typeof AddVisualParams>;
 
 // Deterministic visual id so re-renders of the same tool call replace rather
 // than duplicate (DashboardStore.addVisual replaces by id).
@@ -22,9 +56,18 @@ export function orderFor(id: string): number {
   return orderById.get(id) as number;
 }
 
-export function visualSpecFromArgs(args: AddVisualArgs): VisualSpec {
-  const id = visualIdFor(args);
-  return { ...args, id, order: orderFor(id) };
+// Validate-then-map helpers. Each returns null when the (possibly mid-stream or
+// malformed) args don't satisfy the schema, so the caller skips the mutation.
+export function safeDatasetFromArgs(raw: unknown): Dataset | null {
+  const parsed = CacheDatasetParams.safeParse(raw);
+  return parsed.success ? { ...parsed.data, createdAt: Date.now() } : null;
+}
+
+export function safeVisualSpecFromArgs(raw: unknown): VisualSpec | null {
+  const parsed = AddVisualParams.safeParse(raw);
+  if (!parsed.success) return null;
+  const id = visualIdFor(parsed.data);
+  return { ...parsed.data, id, order: orderFor(id) };
 }
 
 export type { DerivableVisualType };
