@@ -11,25 +11,9 @@ from main import (
     FOUNDRY_CONVERSATION_KEY,
     ApprovalCommand,
     _approval_request,
-    _previous_unapproved_user_message,
     _resolve_approved_question,
 )
 from src.foundry_agent_client import FoundryAgentClient, FoundryAgentResponse, RouteDecision
-
-
-def test_previous_unapproved_user_message_skips_approval_command() -> None:
-    messages = [
-        HumanMessage(content="Show the top 5 brokers by claim amount", id="question"),
-        HumanMessage(content="approve abc123", id="approval"),
-    ]
-
-    assert _previous_unapproved_user_message(messages) == "Show the top 5 brokers by claim amount"
-
-
-def test_previous_unapproved_user_message_returns_none_without_business_question() -> None:
-    messages = [HumanMessage(content="approve abc123", id="approval")]
-
-    assert _previous_unapproved_user_message(messages) is None
 
 
 def test_approval_request_registers_deterministic_command_payload() -> None:
@@ -92,26 +76,26 @@ def _pending_approval(request_id: str = "abc123", question: str = "Show exposure
     )
 
 
-def _approve(request_id: str, messages: list[Any]) -> str | None:
-    return _resolve_approved_question(ApprovalCommand(action="approve", request_id=request_id), messages)
+def _approve(request_id: str) -> str | None:
+    return _resolve_approved_question(ApprovalCommand(action="approve", request_id=request_id))
 
 
 def test_approved_question_consumes_pending_request_once() -> None:
     main.pending_data_approvals.clear()
     main.pending_data_approvals["abc123"] = _pending_approval()
 
-    assert _approve("abc123", []) == "Show exposure by country"
+    assert _approve("abc123") == "Show exposure by country"
     assert main.pending_data_approvals["abc123"].status == "used"
-    assert _approve("abc123", []) is None
+    assert _approve("abc123") is None
 
 
-def test_approved_question_falls_back_to_previous_user_message_for_legacy_sessions() -> None:
-    messages = [
-        HumanMessage(content="Show overdue balance by risk class", id="question"),
-        HumanMessage(content="approve missing", id="approval"),
-    ]
+def test_unknown_approval_id_is_rejected_strictly() -> None:
+    # A governed query may only be authorized by a real, recorded approval; an
+    # unknown id (typo, fabricated, or a lost in-memory store) never falls back
+    # to the last user message.
+    main.pending_data_approvals.clear()
 
-    assert _approve("missing", messages) == "Show overdue balance by risk class"
+    assert _approve("missing") is None
 
 
 def test_route_decision_parser_accepts_json_with_markdown_fence() -> None:
@@ -311,6 +295,19 @@ async def test_expired_approval_does_not_query_genie(monkeypatch: pytest.MonkeyP
 
     assert "expired" in result["messages"][0].content
     assert main.pending_data_approvals["abc123"].status == "expired"
+
+
+async def test_unknown_approval_does_not_query_genie(monkeypatch: pytest.MonkeyPatch) -> None:
+    main.pending_data_approvals.clear()
+
+    async def fail_query(question: str, conversation_id: str | None, approval_request_id: str | None = None) -> dict[str, Any]:
+        raise AssertionError("Genie must not be queried for an unknown approval id")
+
+    monkeypatch.setattr(main, "_execute_risk_query", fail_query)
+
+    result = await main.run_risk({"messages": [HumanMessage(content="approve ghost123")], "route": "risk_data"})
+
+    assert "cannot use that approval request" in result["messages"][0].content
 
 
 async def test_supervisor_emits_plan_created_when_routing_to_governed_data(monkeypatch: pytest.MonkeyPatch) -> None:

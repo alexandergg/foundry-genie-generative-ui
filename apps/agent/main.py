@@ -138,16 +138,6 @@ def _simple_direct_greeting(message: str) -> bool:
     return normalized in {"hi", "hello", "hey", "hola", "buenas", "buenos dias", "buenas tardes", "buenas noches"}
 
 
-def _previous_unapproved_user_message(messages: Sequence[AnyMessage]) -> str | None:
-    for message in reversed(messages):
-        if not isinstance(message, HumanMessage) and getattr(message, "type", None) != "human":
-            continue
-        text = _message_text(message)
-        if not _approval_command(text):
-            return text
-    return None
-
-
 def _purge_stale_approvals(now: datetime | None = None) -> None:
     now = now or datetime.now(timezone.utc)
     max_age = timedelta(minutes=2 * APPROVAL_TTL_MINUTES)
@@ -201,10 +191,15 @@ def _approval_request(question: str) -> list[AnyMessage]:
     ]
 
 
-def _resolve_approved_question(command: ApprovalCommand, messages: Sequence[AnyMessage]) -> str | None:
+def _resolve_approved_question(command: ApprovalCommand) -> str | None:
     approval = pending_data_approvals.get(command.request_id)
     if approval is None:
-        return _previous_unapproved_user_message(messages) if command.action == "approve" else None
+        # Strict governed gate: an approval id with no matching audited request
+        # never authorizes a query (not even `approve`). The user is told to
+        # re-run the question, which mints a fresh, audited approval. This trades
+        # resilience to a lost in-memory store (e.g. a hosted-agent restart) for a
+        # gate that can only be satisfied by a real, recorded approval.
+        return None
     if approval.status != "pending":
         return None
     if approval.is_expired():
@@ -428,7 +423,7 @@ async def run_risk(state: AgentState) -> dict[str, Any]:
     approval_command = _approval_command(question)
     if approval_command:
         approval_request_id = approval_command.request_id
-        approved_question = _resolve_approved_question(approval_command, input_messages)
+        approved_question = _resolve_approved_question(approval_command)
         if approval_command.action == "reject":
             await _emit_ui_event(
                 "approval.updated",

@@ -21,4 +21,5 @@ jobs:
       - run: python -m pip install --upgrade pip && python -m pip install -e 'apps/agent[dev]'
       - run: npm run validate:agent
       - run: npm run lint:web
+      - run: npm run test:web
       - run: npm run build:web
