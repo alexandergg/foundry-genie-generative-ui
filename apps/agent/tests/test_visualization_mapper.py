@@ -102,14 +102,12 @@ def test_build_dataset_attaches_governed_provenance() -> None:
         _DATASET_ANSWER,
         trace_id="risk-abc",
         source="Risk Exposure Warehouse",
-        approval_request_id="approval-123",
     )
     assert dataset is not None
     provenance = dataset["provenance"]
     assert provenance["source"] == "Risk Exposure Warehouse"
     assert provenance["rowCount"] == 2
     assert provenance["traceId"] == "risk-abc"
-    assert provenance["approvalRequestId"] == "approval-123"
     assert provenance["generatedAt"].endswith("Z")
     assert provenance["warnings"] == []
 

@@ -22,10 +22,9 @@ Ask:
 
 Expected:
 
-- Human approval card appears with approve, reject, revise, expiration, and audit metadata.
-- After approval, Foundry queries Genie.
-- The status timeline advances through approval, query, normalization, and rendering phases.
-- UI renders KPIs, table, bar chart, donut/share chart, provenance footer, and an executive risk signal when data supports it.
+- The supervisor routes the question to the governed-data flow and Foundry queries Genie.
+- The status timeline advances through planning, query, normalization, and rendering phases.
+- UI renders the executive summary, table, bar chart, donut/share chart, and provenance footer when data supports it.
 
 ### 2. Conversational memory follow-up
 
@@ -36,7 +35,7 @@ Ask:
 Expected:
 
 - The bridge should reuse the previous returned table when sufficient.
-- No new governed data approval should be required for simple table reuse.
+- No new governed Genie query should be issued for simple table reuse.
 
 ### 3. Trend / variation visual
 
@@ -77,7 +76,6 @@ Expected:
 ## Success criteria
 
 - The browser never exposes cloud credentials.
-- The user sees explicit approval before governed data access and can approve, reject, or revise the query.
 - Foundry and Genie provide real data-backed answers.
 - Visual components are rendered as controlled React components with visible provenance.
 - Follow-up questions can use conversation/session context.

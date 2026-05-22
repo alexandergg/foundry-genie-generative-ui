@@ -11,9 +11,6 @@ from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMes
 from .config import Settings
 
 CONVERSATION_ID_KEY = "azure_ai_agents_conversation_id"
-PREVIOUS_RESPONSE_ID_KEY = "azure_ai_agents_previous_response_id"
-PENDING_TYPE_KEY = "azure_ai_agents_pending_type"
-MCP_APPROVAL_PENDING = "mcp_approval"
 
 Route = Literal["direct", "dashboard_op", "risk_data"]
 FoundryAgentState = dict[str, Any]
@@ -94,11 +91,6 @@ class FoundryAgentClient:
         return value if isinstance(value, str) else None
 
     @staticmethod
-    def _pending_type(state: FoundryAgentState) -> str | None:
-        value = state.get(PENDING_TYPE_KEY)
-        return value if isinstance(value, str) else None
-
-    @staticmethod
     def _agent_state(message: AnyMessage, conversation_id: str | None = None) -> FoundryAgentState:
         state: FoundryAgentState = {"messages": [message]}
         if conversation_id:
@@ -135,16 +127,6 @@ class FoundryAgentClient:
                 return cast(AIMessage, message)
         return None
 
-    def _approval_tool_call_id(self, state: FoundryAgentState) -> str | None:
-        message = self._last_ai_message(state)
-        if message is None:
-            return None
-        for tool_call in message.tool_calls:
-            call_id = tool_call.get("id")
-            if isinstance(call_id, str):
-                return call_id
-        return None
-
     def _invoke_agent_node(self, message: AnyMessage, conversation_id: str | None = None) -> FoundryAgentState:
         return self._foundry_agent_node().invoke(self._agent_state(message, conversation_id))
 
@@ -165,28 +147,6 @@ class FoundryAgentClient:
                 time.sleep(delay)
                 delay *= 2
         raise RuntimeError("unreachable")  # pragma: no cover
-
-    def _approval_continuation_state(self, state: FoundryAgentState, tool_call_id: str) -> FoundryAgentState:
-        return {
-            "messages": [ToolMessage(content=json.dumps({"approve": True}), tool_call_id=tool_call_id)],
-            CONVERSATION_ID_KEY: self._conversation_id(state),
-            PREVIOUS_RESPONSE_ID_KEY: state.get(PREVIOUS_RESPONSE_ID_KEY),
-            PENDING_TYPE_KEY: self._pending_type(state),
-        }
-
-    def _complete_langgraph_mcp_approvals(self, state: FoundryAgentState) -> FoundryAgentState:
-        node = self._foundry_agent_node()
-        current_state = state
-        for _ in range(self.settings.mcp_approval_rounds):
-            if self._pending_type(current_state) != MCP_APPROVAL_PENDING:
-                return current_state
-            tool_call_id = self._approval_tool_call_id(current_state)
-            if not tool_call_id:
-                raise RuntimeError("Foundry requested MCP approval but did not return an approval tool call id.")
-            current_state = node.invoke(self._approval_continuation_state(current_state, tool_call_id))
-        if self._pending_type(current_state) == MCP_APPROVAL_PENDING:
-            raise RuntimeError(f"Foundry/Genie kept requesting MCP approvals after {self.settings.mcp_approval_rounds} rounds.")
-        return current_state
 
     @staticmethod
     def _looks_transient(answer: str) -> bool:
@@ -271,7 +231,7 @@ class FoundryAgentClient:
             "Answer the latest user message directly in the user's language. Use the existing Foundry conversation history, "
             "including any prior Databricks Genie results already present in this conversation, when it helps. "
             "Do not call Databricks Genie or any governed data tool for this direct response. If the request actually needs new governed data, "
-            "say that it requires approval instead of querying. Keep the answer concise and helpful. "
+            "say that it needs a governed data query instead of answering here. Keep the answer concise and helpful. "
             f"Latest user message: {question}"
         )
 
@@ -310,8 +270,7 @@ class FoundryAgentClient:
 
     def _invoke_genie_once(self, question: str, conversation_id: str | None) -> FoundryAgentState:
         prompt = self._genie_business_prompt(question, has_conversation_context=bool(conversation_id))
-        state = self._invoke_agent_node(HumanMessage(content=prompt), conversation_id)
-        return self._complete_langgraph_mcp_approvals(state)
+        return self._invoke_agent_node(HumanMessage(content=prompt), conversation_id)
 
     def _resolve_transient_genie_response(self, state: FoundryAgentState) -> FoundryAgentResponse:
         response = self._response_from_state(state, "Foundry/Genie did not return an AI message.")
@@ -320,7 +279,6 @@ class FoundryAgentClient:
                 return response
             time.sleep(3)
             state = self._invoke_agent_node(HumanMessage(content=self._warehouse_retry_prompt()), response.conversation_id)
-            state = self._complete_langgraph_mcp_approvals(state)
             response = self._response_from_state(state, "Foundry/Genie did not return an AI message after retry.")
         return response
 
@@ -328,8 +286,6 @@ class FoundryAgentClient:
         response_state = self._invoke_agent_node_retrying(
             HumanMessage(content=self._route_supervisor_prompt(messages, has_foundry_conversation))
         )
-        if self._pending_type(response_state) == MCP_APPROVAL_PENDING:
-            return RouteDecision(route="risk_data", direct_answer=None, rationale="Supervisor attempted a governed tool call.")
         response = self._response_from_state(response_state, "Foundry supervisor did not return an AI message.")
         return self._parse_route_decision(response.answer)
 
@@ -378,8 +334,6 @@ class FoundryAgentClient:
 
     def answer_direct(self, question: str, conversation_id: str | None = None) -> FoundryAgentResponse:
         state = self._invoke_agent_node(HumanMessage(content=self._direct_prompt(question)), conversation_id)
-        if self._pending_type(state) == MCP_APPROVAL_PENDING:
-            raise RuntimeError("Direct response attempted to access governed data without approval.")
         return self._response_from_state(state, "Foundry direct response did not return an AI message.")
 
     def ask(self, question: str, conversation_id: str | None = None) -> FoundryAgentResponse:

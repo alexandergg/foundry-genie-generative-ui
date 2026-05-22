@@ -23,8 +23,6 @@ def test_risk_genie_environment_variables_override_foundry_reserved_names(monkey
     monkeypatch.setenv("RISK_GENIE_AGENT_NAME", "risk-agent")
     monkeypatch.setenv("FOUNDRY_AGENT_NAME", "legacy-agent")
     monkeypatch.setenv("RISK_GENIE_AGENT_VERSION", "risk-agent:2")
-    monkeypatch.setenv("RISK_GENIE_MCP_APPROVAL_ROUNDS", "7")
-    monkeypatch.setenv("RISK_GENIE_REQUIRE_HUMAN_DATA_APPROVAL", "false")
     monkeypatch.setenv("RISK_GENIE_TRANSIENT_RESPONSE_RETRIES", "3")
 
     settings = load_settings()
@@ -32,6 +30,4 @@ def test_risk_genie_environment_variables_override_foundry_reserved_names(monkey
     assert settings.project_endpoint == "https://example.services.ai.azure.com/api/projects/demo"
     assert settings.agent_name == "risk-agent"
     assert settings.agent_version == "risk-agent:2"
-    assert settings.mcp_approval_rounds == 7
-    assert settings.require_human_data_approval is False
     assert settings.transient_response_retries == 3

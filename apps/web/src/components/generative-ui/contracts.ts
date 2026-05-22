@@ -6,8 +6,6 @@ export const UiEventKind = z.enum([
   "reasoning.started",
   "reasoning.completed",
   "plan.created",
-  "approval.requested",
-  "approval.updated",
   "query.started",
   "query.completed",
   "normalization.started",
@@ -20,7 +18,7 @@ export const UiEventKind = z.enum([
 ]);
 export type UiEventKind = z.infer<typeof UiEventKind>;
 
-export const UiEventPhase = z.enum(["supervise", "approval", "query", "normalize", "visualize", "complete", "error"]);
+export const UiEventPhase = z.enum(["supervise", "query", "normalize", "visualize", "complete", "error"]);
 export type UiEventPhase = z.infer<typeof UiEventPhase>;
 
 export const UiEventEnvelopeV1 = z.object({

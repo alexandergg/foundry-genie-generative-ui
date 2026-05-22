@@ -14,9 +14,9 @@ export interface RiskUiSubscriberHandlers {
 
 // A governed Genie flow is underway and visuals are coming. If the canvas is
 // still empty, switch it to the planning skeleton so the live status timeline is
-// visible — including through the human-approval wait, before the query runs.
-// Accumulated dashboards keep their visuals (the timeline already renders above
-// them), so we never wipe prior results mid-conversation.
+// visible from the moment the supervisor commits to the governed route, before
+// the query lands. Accumulated dashboards keep their visuals (the timeline
+// already renders above them), so we never wipe prior results mid-conversation.
 function defaultOnGovernedFlowStarted(): void {
   if (getDashboardSnapshot().visuals.length === 0) setDashboardPlanning();
 }

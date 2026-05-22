@@ -12,9 +12,5 @@ environment_variables:
     value: "risk-exposure-genie-agent"
   - name: RISK_GENIE_AGENT_VERSION
     value: ""
-  - name: RISK_GENIE_REQUIRE_HUMAN_DATA_APPROVAL
-    value: "true"
-  - name: RISK_GENIE_MCP_APPROVAL_ROUNDS
-    value: "20"
   - name: RISK_GENIE_TRANSIENT_RESPONSE_RETRIES
     value: "2"

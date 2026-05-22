@@ -23,7 +23,6 @@ export const DatasetProvenance = z.object({
   source: z.string(),
   generatedAt: z.string(),
   rowCount: z.number(),
-  approvalRequestId: z.string().optional(),
   traceId: z.string().optional(),
   warnings: z.array(z.object({ code: z.string(), message: z.string() })).default([]),
 });

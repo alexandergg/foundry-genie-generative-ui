@@ -24,8 +24,6 @@ const KIND_LABEL: Record<UiEventKind, string> = {
   "reasoning.started": "Reasoning",
   "reasoning.completed": "Reasoning",
   "plan.created": "Planning the analysis",
-  "approval.requested": "Awaiting approval",
-  "approval.updated": "Approval updated",
   "query.started": "Querying governed data",
   "query.completed": "Query complete",
   "normalization.started": "Normalizing results",
@@ -42,7 +40,6 @@ const TERMINAL_KINDS = new Set<UiEventKind>([
   "query.completed",
   "normalization.completed",
   "visualization.rendered",
-  "approval.updated",
   "provenance.attached",
   "followups.suggested",
 ]);

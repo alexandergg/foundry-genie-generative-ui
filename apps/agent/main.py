@@ -2,13 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import os
-import re
 import uuid
 import warnings
 from collections.abc import Sequence
 from contextlib import suppress
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Literal, TypedDict
 
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint
@@ -32,10 +29,6 @@ GraphNode = Literal["direct_response", "dashboard_op", "run_risk"]
 
 APP_AGENT_NAME = "default"
 APP_TITLE = "Risk Exposure Generative UI Agent"
-APPROVAL_COMMAND_PREFIX = "approve"
-APPROVAL_REJECT_PREFIX = "reject"
-APPROVAL_REVISE_PREFIX = "revise"
-APPROVAL_TTL_MINUTES = 15
 FOUNDRY_CONVERSATION_KEY = CONVERSATION_ID_KEY
 
 NODE_SUPERVISE = "supervise_request"
@@ -50,41 +43,14 @@ context. Answer directly for greetings, app help, capability questions, conceptu
 explanations, setup questions, UI questions, and follow-ups that can be answered from
 the active Foundry conversation or prior Genie results already in that conversation.
 Use Databricks Genie only for concrete risk analytics questions that need new governed
-data. Never invent risk metrics; if governed data is needed, route through the human
-approval flow before querying Genie. Reply in the user's language and keep direct
+data. Never invent risk metrics; when governed data is needed, route through the governed
+risk-data flow to query Genie. Reply in the user's language and keep direct
 answers concise.
 """.strip()
 
 load_dotenv()
 settings = load_settings()
 foundry_client = FoundryAgentClient(settings)
-
-ApprovalAction = Literal["approve", "reject", "revise"]
-ApprovalStatus = Literal["pending", "used", "rejected", "expired"]
-
-
-@dataclass
-class ApprovalCommand:
-    action: ApprovalAction
-    request_id: str
-    revised_question: str | None = None
-
-
-@dataclass
-class PendingApproval:
-    request_id: str
-    question: str
-    purpose: str
-    created_at: datetime
-    expires_at: datetime
-    audit_id: str
-    status: ApprovalStatus = "pending"
-
-    def is_expired(self, now: datetime | None = None) -> bool:
-        return (now or datetime.now(timezone.utc)) >= self.expires_at
-
-
-pending_data_approvals: dict[str, PendingApproval] = {}
 
 
 class AgentState(TypedDict, total=False):
@@ -116,99 +82,6 @@ def _state_update(messages: list[AnyMessage], conversation_id: str | None = None
     return update
 
 
-def _approval_command(message: str) -> ApprovalCommand | None:
-    approve_match = re.fullmatch(rf"{APPROVAL_COMMAND_PREFIX}\s+([A-Za-z0-9_-]+)\.?", message.strip())
-    if approve_match:
-        return ApprovalCommand(action="approve", request_id=approve_match.group(1))
-
-    reject_match = re.fullmatch(rf"{APPROVAL_REJECT_PREFIX}\s+([A-Za-z0-9_-]+)\.?", message.strip())
-    if reject_match:
-        return ApprovalCommand(action="reject", request_id=reject_match.group(1))
-
-    revise_match = re.fullmatch(rf"{APPROVAL_REVISE_PREFIX}\s+([A-Za-z0-9_-]+)\s*:\s*(.+)", message.strip(), re.DOTALL)
-    if revise_match:
-        revised_question = revise_match.group(2).strip()
-        if revised_question:
-            return ApprovalCommand(action="revise", request_id=revise_match.group(1), revised_question=revised_question)
-    return None
-
-
-def _purge_stale_approvals(now: datetime | None = None) -> None:
-    now = now or datetime.now(timezone.utc)
-    max_age = timedelta(minutes=2 * APPROVAL_TTL_MINUTES)
-    stale = [
-        request_id
-        for request_id, approval in pending_data_approvals.items()
-        if approval.status != "pending" or (now - approval.created_at) > max_age
-    ]
-    for request_id in stale:
-        del pending_data_approvals[request_id]
-
-
-def _approval_request(question: str) -> list[AnyMessage]:
-    _purge_stale_approvals()
-    request_id = uuid.uuid4().hex[:10]
-    now = datetime.now(timezone.utc)
-    purpose = "Send the question to the Foundry agent to query exposure, claims, brokers or overdue balances."
-    pending_data_approvals[request_id] = PendingApproval(
-        request_id=request_id,
-        question=question,
-        purpose=purpose,
-        created_at=now,
-        expires_at=now + timedelta(minutes=APPROVAL_TTL_MINUTES),
-        audit_id=f"approval-{uuid.uuid4().hex[:12]}",
-    )
-    tool_call_id = f"mcpApprovalCard-{request_id}"
-    approval = pending_data_approvals[request_id]
-    return [
-        AIMessage(content="Approval required before querying governed data."),
-        AIMessage(
-            content="",
-            tool_calls=[
-                {
-                    "id": tool_call_id,
-                    "name": "mcpApprovalCard",
-                    "args": {
-                        "requestId": request_id,
-                        "question": question,
-                        "dataSource": "Databricks Genie Space Risk Exposure through Azure AI Foundry MCP",
-                        "purpose": purpose,
-                        "approvalCommand": f"{APPROVAL_COMMAND_PREFIX} {request_id}",
-                        "rejectCommand": f"{APPROVAL_REJECT_PREFIX} {request_id}",
-                        "reviseCommandPrefix": f"{APPROVAL_REVISE_PREFIX} {request_id}:",
-                        "expiresAt": approval.expires_at.isoformat().replace("+00:00", "Z"),
-                        "auditId": approval.audit_id,
-                    },
-                }
-            ],
-        ),
-        ToolMessage(content="waiting_for_user_approval", tool_call_id=tool_call_id),
-    ]
-
-
-def _resolve_approved_question(command: ApprovalCommand) -> str | None:
-    approval = pending_data_approvals.get(command.request_id)
-    if approval is None:
-        # Strict governed gate: an approval id with no matching audited request
-        # never authorizes a query (not even `approve`). The user is told to
-        # re-run the question, which mints a fresh, audited approval. This trades
-        # resilience to a lost in-memory store (e.g. a hosted-agent restart) for a
-        # gate that can only be satisfied by a real, recorded approval.
-        return None
-    if approval.status != "pending":
-        return None
-    if approval.is_expired():
-        approval.status = "expired"
-        return None
-    if command.action == "reject":
-        approval.status = "rejected"
-        return None
-    approval.status = "used"
-    if command.action == "revise" and command.revised_question:
-        return command.revised_question
-    return approval.question
-
-
 def _component_message(name: str, args: dict[str, Any]) -> list[AnyMessage]:
     tool_call_id = f"{name}-{uuid.uuid4().hex[:8]}"
     return [
@@ -221,7 +94,6 @@ def _render_component_messages(
     question: str,
     response: FoundryAgentResponse,
     trace_id: str | None = None,
-    approval_request_id: str | None = None,
 ) -> list[AnyMessage]:
     messages: list[AnyMessage] = []
     calls = build_dataset_calls(
@@ -229,7 +101,6 @@ def _render_component_messages(
         response.answer,
         trace_id,
         source=settings.databricks_sql_warehouse_name or None,
-        approval_request_id=approval_request_id,
     )
     for call in calls:
         messages.extend(_component_message(call.name, call.args))
@@ -251,8 +122,6 @@ async def supervise_request(state: AgentState) -> dict[str, Any]:
     question = _last_user_message(messages)
     if not question:
         return {"route": "direct"}
-    if _approval_command(question):
-        return {"route": "risk_data"}
 
     await _emit_ui_event(
         "reasoning.started",
@@ -294,7 +163,7 @@ async def supervise_request(state: AgentState) -> dict[str, Any]:
             "plan.created",
             "supervise",
             {
-                "message": "Plan: request human approval, then query governed risk data and visualize it.",
+                "message": "Plan: query governed risk data and visualize it.",
                 "rationale": decision.rationale,
             },
         )
@@ -376,11 +245,11 @@ async def direct_response(state: AgentState) -> dict[str, Any]:
         )
 
 
-async def _execute_risk_query(question: str, conversation_id: str | None, approval_request_id: str | None = None) -> dict[str, Any]:
+async def _execute_risk_query(question: str, conversation_id: str | None) -> dict[str, Any]:
     await _emit_ui_event(
         "query.started",
         "query",
-        {"message": "Approval received. Continuing the Azure AI Foundry conversation…", "question": question},
+        {"message": "Querying the Azure AI Foundry conversation for governed data…", "question": question},
     )
     await _emit_ui_event(
         "normalization.started",
@@ -395,7 +264,7 @@ async def _execute_risk_query(question: str, conversation_id: str | None, approv
         await _emit_ui_event("normalization.completed", "normalize", {"message": "Genie results normalized into governed records."})
         await _emit_ui_event("query.completed", "query", {"message": "Governed query completed.", "traceId": trace_id})
         await _emit_ui_event("visualization.proposed", "visualize", {"message": "Proposing controlled visualizations for the result."})
-        messages.extend(_render_component_messages(question, response, trace_id, approval_request_id))
+        messages.extend(_render_component_messages(question, response, trace_id))
         await _emit_ui_event("visualization.rendered", "visualize", {"message": "Controlled visualizations rendered."})
         await _emit_ui_event("followups.suggested", "complete", {"message": "Suggested grounded follow-up questions."})
         await _emit_ui_event(
@@ -423,45 +292,7 @@ async def run_risk(state: AgentState) -> dict[str, Any]:
             [AIMessage(content="What would you like to analyze about exposure, claims, brokers or overdue balances?")], conversation_id
         )
 
-    approval_request_id: str | None = None
-    approval_command = _approval_command(question)
-    if approval_command:
-        approval_request_id = approval_command.request_id
-        approved_question = _resolve_approved_question(approval_command)
-        if approval_command.action == "reject":
-            await _emit_ui_event(
-                "approval.updated",
-                "approval",
-                {"message": "Human rejected the governed data request.", "status": "rejected"},
-            )
-            return _state_update([AIMessage(content="Data access request rejected. I did not query Genie.")], conversation_id)
-        if not approved_question:
-            return _state_update(
-                [
-                    AIMessage(
-                        content="I cannot use that approval request. It may be missing, expired, rejected or already used. Run the query again to generate a valid authorization."
-                    )
-                ],
-                conversation_id,
-            )
-        await _emit_ui_event(
-            "approval.updated",
-            "approval",
-            {
-                "message": "Human approved the governed data request.",
-                "status": "revised" if approval_command.action == "revise" else "approved",
-            },
-        )
-        question = approved_question
-    elif settings.require_human_data_approval:
-        await _emit_ui_event(
-            "approval.requested",
-            "approval",
-            {"message": "Requesting human approval before querying governed data."},
-        )
-        return _state_update(_approval_request(question), conversation_id)
-
-    return await _execute_risk_query(question, conversation_id, approval_request_id)
+    return await _execute_risk_query(question, conversation_id)
 
 
 def build_agent_graph() -> Any:

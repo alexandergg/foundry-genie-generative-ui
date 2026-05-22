@@ -42,8 +42,6 @@ Important backend settings:
 | `FOUNDRY_PROJECT_ENDPOINT` / `RISK_GENIE_PROJECT_ENDPOINT` | Overrides metadata project endpoint |
 | `FOUNDRY_AGENT_NAME` / `RISK_GENIE_AGENT_NAME` | Foundry prompt agent name |
 | `FOUNDRY_AGENT_VERSION` / `RISK_GENIE_AGENT_VERSION` | Optional explicit version such as `risk-exposure-genie-agent:3` |
-| `FOUNDRY_MCP_APPROVAL_ROUNDS` / `RISK_GENIE_MCP_APPROVAL_ROUNDS` | Internal MCP approval continuation limit |
-| `FOUNDRY_REQUIRE_HUMAN_DATA_APPROVAL` / `RISK_GENIE_REQUIRE_HUMAN_DATA_APPROVAL` | Shows the pre-query HITL approval card |
 | `FOUNDRY_TRANSIENT_RESPONSE_RETRIES` / `RISK_GENIE_TRANSIENT_RESPONSE_RETRIES` | Retries transient warehouse/query-pending responses |
 | `PORT` | Local FastAPI port; defaults to 8123 |
 
@@ -134,10 +132,6 @@ Start the SQL Warehouse in Databricks or run the data loading script with explic
 ```bash
 ALLOW_WAREHOUSE_START=yes ./scripts/run-demo-sql.sh
 ```
-
-### MCP approval payload errors
-
-Restart the local agent process to reset in-memory session state. The bridge also recreates the Foundry conversation if it detects a poisoned pending approval state.
 
 ### The UI renders text but no charts
 

@@ -160,7 +160,6 @@ def build_dataset(
     trace_id: str | None = None,
     *,
     source: str | None = None,
-    approval_request_id: str | None = None,
 ) -> dict[str, Any] | None:
     """Capture the structured rows behind a Genie answer as a cacheable dataset."""
     headers, rows = extract_markdown_table(answer)
@@ -191,7 +190,6 @@ def build_dataset(
             source=source or DEFAULT_PROVENANCE_SOURCE,
             row_count=len(rows),
             trace_id=trace_id,
-            approval_request_id=approval_request_id,
         ),
     }
 
@@ -218,10 +216,9 @@ def build_dataset_calls(
     trace_id: str | None = None,
     *,
     source: str | None = None,
-    approval_request_id: str | None = None,
 ) -> list[ComponentCall]:
     """Cache the dataset once, then emit the executive summary plus derived-visual specs."""
-    dataset = build_dataset(question, answer, trace_id, source=source, approval_request_id=approval_request_id)
+    dataset = build_dataset(question, answer, trace_id, source=source)
     if dataset is None:
         # No table behind the answer: cache a narrative-only dataset so the
         # executive summary still renders as a dashboard card.
@@ -238,7 +235,6 @@ def build_dataset_calls(
                 source=source or DEFAULT_PROVENANCE_SOURCE,
                 row_count=0,
                 trace_id=trace_id,
-                approval_request_id=approval_request_id,
                 warnings=[NormalizationWarning("no_structured_rows", "No structured rows were detected; narrative only.")],
             ),
         }

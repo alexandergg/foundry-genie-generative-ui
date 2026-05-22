@@ -78,7 +78,6 @@ describe("dataset-derive", () => {
         source: "Risk Exposure Warehouse",
         generatedAt: "2026-05-22T00:00:00Z",
         rowCount: 3,
-        approvalRequestId: "approval-abc",
         traceId: "risk-xyz",
         warnings: [],
       },
@@ -88,7 +87,6 @@ describe("dataset-derive", () => {
       visualId: "v-bar",
       source: "Risk Exposure Warehouse",
       rowCount: 3,
-      approvalRequestId: "approval-abc",
       traceId: "risk-xyz",
     });
   });

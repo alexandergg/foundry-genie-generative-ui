@@ -221,7 +221,7 @@ export AG_UI_AGENT_AUTH="azure-identity"
 export AG_UI_AGENT_SCOPE="https://ai.azure.com/.default"
 ```
 
-Validate with a safe prompt first, then use the normal approval card before any governed Genie query. After validation, check Foundry Traces or Application Insights for both `risk-exposure-genie-agent` and `risk-exposure-ag-ui-hosted`. Useful workspace-based Application Insights tables are `AppRequests`, `AppDependencies`, `AppTraces`, and `AppGenAIContent`. Keep Databricks compute stopped when the demo is idle.
+Validate with a safe prompt first, then run a governed Genie query. After validation, check Foundry Traces or Application Insights for both `risk-exposure-genie-agent` and `risk-exposure-ag-ui-hosted`. Useful workspace-based Application Insights tables are `AppRequests`, `AppDependencies`, `AppTraces`, and `AppGenAIContent`. Keep Databricks compute stopped when the demo is idle.
 
 ## 11. Optional: deploy the Next.js frontend to Azure App Service
 

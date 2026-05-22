@@ -19,7 +19,6 @@ def build_dataset_provenance(
     source: str,
     row_count: int,
     generated_at: datetime | None = None,
-    approval_request_id: str | None = None,
     trace_id: str | None = None,
     warnings: list[NormalizationWarning] | None = None,
 ) -> dict[str, Any]:
@@ -34,8 +33,6 @@ def build_dataset_provenance(
         "rowCount": row_count,
         "warnings": [warning.to_payload() for warning in (warnings or [])],
     }
-    if approval_request_id:
-        payload["approvalRequestId"] = approval_request_id
     if trace_id:
         payload["traceId"] = trace_id
     return payload

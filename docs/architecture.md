@@ -9,27 +9,26 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 1. The user interacts with the Next.js app.
 2. CopilotKit sends the conversation to `/api/copilotkit`; the browser never calls Foundry directly.
 3. The Next.js route uses an AG-UI `HttpAgent` and forwards the run to either the local FastAPI endpoint or a Microsoft Foundry Hosted Agent Invocations endpoint.
-4. The AG-UI/LangGraph runtime requests explicit human approval before governed data access.
-5. The user can approve, reject, or revise the request. Pending approvals include a TTL and audit ID; the current local store is in-memory, so multi-instance deployments should externalize this state.
-6. After approval, the runtime invokes the Microsoft Foundry prompt agent through the Foundry Responses API.
-7. The Foundry prompt agent uses a Databricks Genie MCP RemoteTool connection.
-8. Genie queries the curated Unity Catalog view with a SQL Warehouse.
-9. The AG-UI/LangGraph runtime converts the answer/table into controlled component calls and attaches visual provenance.
-10. The UI renders KPIs, tables, charts, narrative cards, policy breach signals, follow-up actions, and a semantic run timeline.
-11. Foundry writes prompt-agent, hosted-agent, model, and dependency telemetry to the connected workspace-based Application Insights resource for trace analysis.
+4. The AG-UI/LangGraph supervisor routes the request to either a direct response, a dashboard operation on cached data, or a governed Genie query.
+5. For governed queries the runtime invokes the Microsoft Foundry prompt agent through the Foundry Responses API.
+6. The Foundry prompt agent uses a Databricks Genie MCP RemoteTool connection.
+7. Genie queries the curated Unity Catalog view with a SQL Warehouse.
+8. The AG-UI/LangGraph runtime converts the answer/table into controlled component calls and attaches visual provenance.
+9. The UI renders tables, charts, narrative cards, follow-up actions, and a semantic run timeline.
+10. Foundry writes prompt-agent, hosted-agent, model, and dependency telemetry to the connected workspace-based Application Insights resource for trace analysis.
 
 ## Key design choices
 
 - The browser never calls Foundry or Databricks directly; `/api/copilotkit` remains the web boundary.
 - Secrets and cloud credentials stay in backend processes. For hosted endpoints, the Next.js route can use server-side Azure identity to call Foundry Invocations.
-- AG-UI stays as the UI protocol because it is purpose-built for streaming agent UI, human-in-the-loop cards, state, and controlled component rendering.
-- The dashboard keeps a semantic timeline for planning, approval, querying, normalization, rendering, completion, and safe errors.
+- AG-UI stays as the UI protocol because it is purpose-built for streaming agent UI, state, and controlled component rendering.
+- The dashboard keeps a semantic timeline for planning, querying, normalization, rendering, completion, and safe errors.
 - The local FastAPI endpoint and hosted Invocations entrypoint share the same LangGraph behavior to avoid divergent demo logic.
 - Financial/analytics visualizations are controlled React components, not arbitrary HTML from the model.
 - Foundry conversation IDs are preserved so the agent can use previous Genie context.
 - Local session context can answer simple follow-ups from the last returned table without a new Genie call.
-- MCP approvals are handled after the user has approved governed data access in the UI.
-- Provenance is captured once per Genie result on the cached dataset (`source`, `generatedAt`, `approvalRequestId`, `traceId`, `rowCount`, and normalization warnings); every visual derived from that dataset inherits it and stamps its own `visualId` when rendering the footer.
+- The Genie MCP tool is registered in Foundry with `require_approval: never`, so MCP tool calls execute without per-call approval rounds.
+- Provenance is captured once per Genie result on the cached dataset (`source`, `generatedAt`, `traceId`, `rowCount`, and normalization warnings); every visual derived from that dataset inherits it and stamps its own `visualId` when rendering the footer.
 - Application Insights is connected at both Foundry account and project scopes so prompt-agent and hosted-agent traces are visible from Foundry Traces and Azure Monitor.
 
 ## Main components
@@ -37,7 +36,7 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 | Area | Path | Responsibility |
 | --- | --- | --- |
 | Web app | `apps/web` | Next.js, CopilotKit runtime route, chat shell, controlled UI components |
-| Agent runtime | `apps/agent` | Local FastAPI AG-UI endpoint, Foundry Hosted Agent Invocations entrypoint, LangGraph HITL approval, Foundry invocation, visualization mapping |
+| Agent runtime | `apps/agent` | Local FastAPI AG-UI endpoint, Foundry Hosted Agent Invocations entrypoint, LangGraph supervisor routing, Foundry invocation, visualization mapping |
 | Azure infra | `infra` | Optional Databricks workspace, ADLS Gen2, Microsoft Foundry project/model deployment, Key Vault, managed identity, Azure Container Registry, Log Analytics, Application Insights, Foundry tracing connections |
 | Databricks setup | `databricks/sql` and `scripts` | Demo data, SQL warehouse, Genie Space, permissions |
 | Foundry setup | `scripts/setup-foundry-genie-agent.sh` | RemoteTool connection and Prompt Agent version |

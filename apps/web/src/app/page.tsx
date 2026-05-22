@@ -53,7 +53,6 @@ export default function HomePage() {
         <aside className="status-pillbar" aria-label="Demo stack">
           <span>Foundry</span>
           <span>Genie</span>
-          <span>HITL</span>
           <span>AG-UI</span>
         </aside>
       </section>

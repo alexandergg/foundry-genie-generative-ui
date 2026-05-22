@@ -11,8 +11,6 @@ UiEventKind = Literal[
     "reasoning.started",
     "reasoning.completed",
     "plan.created",
-    "approval.requested",
-    "approval.updated",
     "query.started",
     "query.completed",
     "normalization.started",
@@ -24,7 +22,7 @@ UiEventKind = Literal[
     "error.safe",
 ]
 
-UiEventPhase = Literal["supervise", "approval", "query", "normalize", "visualize", "complete", "error"]
+UiEventPhase = Literal["supervise", "query", "normalize", "visualize", "complete", "error"]
 
 
 @dataclass(frozen=True)

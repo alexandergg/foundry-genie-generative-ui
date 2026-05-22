@@ -7,7 +7,6 @@ CONTROLLED_COMPONENT_NAMES: tuple[str, ...] = (
     "lineAreaChartCard",
     "donutChartCard",
     "barChartCard",
-    "mcpApprovalCard",
     "followUpQuestions",
     # Dashboard frontend tools (agent-invoked, handled client-side)
     "cacheDataset",

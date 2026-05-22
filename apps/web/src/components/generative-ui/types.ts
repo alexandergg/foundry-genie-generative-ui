@@ -10,7 +10,6 @@ export const VisualProvenance = z.object({
   source: z.string(),
   generatedAt: z.string(),
   rowCount: z.number(),
-  approvalRequestId: z.string().optional(),
   traceId: z.string().optional(),
   warnings: z.array(z.object({ code: z.string(), message: z.string() })).default([]),
 });
@@ -71,19 +70,6 @@ export const RiskNarrativeCardProps = z.object({
   provenance: VisualProvenance.optional(),
 });
 export type RiskNarrativeCardProps = z.infer<typeof RiskNarrativeCardProps>;
-
-export const McpApprovalCardProps = z.object({
-  requestId: z.string(),
-  question: z.string(),
-  dataSource: z.string(),
-  purpose: z.string(),
-  approvalCommand: z.string(),
-  rejectCommand: z.string().optional(),
-  reviseCommandPrefix: z.string().optional(),
-  expiresAt: z.string().optional(),
-  auditId: z.string().optional(),
-});
-export type McpApprovalCardProps = z.infer<typeof McpApprovalCardProps>;
 
 export const FollowUpQuestionsProps = z.object({
   title: z.string(),
