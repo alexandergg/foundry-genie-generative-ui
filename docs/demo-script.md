@@ -2,7 +2,7 @@
 
 ## Goal
 
-Demonstrate that a user can ask governed business questions, approve access, receive visual answers, and ask follow-ups that reuse Foundry/session context when possible.
+Demonstrate that a user can ask governed business questions, receive visual answers backed by Foundry/Genie, and ask follow-ups that reuse Foundry/session context when possible.
 
 ## Before the session
 

@@ -12,7 +12,6 @@ Use this skill for setup scripts, Bicep, Databricks SQL, Azure AI Foundry metada
 - Treat deployments, SQL warehouse starts, and any live Azure, Databricks, or Foundry calls as explicit, user-approved operations.
 - Prefer dry-run, validation, or `what-if` commands before mutations.
 - Keep `.risk.env.local`, `.env*`, Foundry metadata, tenant IDs, tokens, workspace URLs, and other secrets out of git and logs.
-- Preserve the human approval flow before governed Databricks data is queried.
 - Keep demo data and controlled UI payloads deterministic and schema-shaped.
 
 ## Change checklist

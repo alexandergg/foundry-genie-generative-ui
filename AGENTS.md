@@ -14,7 +14,6 @@ Root rules for AI agents and contributors. Read this before editing the reposito
 
 - Never commit secrets, live tokens, real tenant IDs, or local `.env` files.
 - Keep Azure, Databricks, and Foundry calls opt-in; do not add live cloud calls to CI or pre-commit.
-- Preserve the human approval flow before governed data is queried.
 - Keep controlled UI component payloads deterministic and schema-shaped.
 - Prefer small, typed, testable helpers over broad fallbacks or hidden behavior.
 - Update README/docs when script names, setup flow, environment variables, or validation commands change.

@@ -88,7 +88,7 @@ definition={
         'type': 'mcp',
         'server_label': 'databricks-genie-risk',
         'server_url': genie_endpoint,
-        'require_approval': 'always',
+        'require_approval': 'never',
         'project_connection_id': connection,
     }],
 }

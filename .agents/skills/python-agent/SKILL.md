@@ -11,7 +11,6 @@ Use this skill for changes under `apps/agent`.
 
 - Keep external SDK handling isolated in small helpers.
 - Prefer typed dataclasses, aliases, or explicit models for internal payloads.
-- Preserve human approval before governed Databricks data is queried.
 - Do not require cloud credentials for unit tests.
 - Keep live Azure AI Foundry and Databricks calls opt-in and out of CI.
 

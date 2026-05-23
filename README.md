@@ -1,7 +1,7 @@
 # Risk & Exposure Intelligence Copilot
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Demo: human-in-the-loop approval, a governed Databricks Genie query through Azure AI Foundry, and the analytics dashboard rendering controlled React visuals" width="900" />
+  <img src="docs/assets/demo.gif" alt="Demo: a governed Databricks Genie query through Azure AI Foundry and the analytics dashboard rendering controlled React visuals" width="900" />
 </p>
 
 A professional demo repository for **Generative UI on Azure AI Foundry** with **Databricks Genie**, **CopilotKit**, and the **AG-UI protocol**.
@@ -12,9 +12,9 @@ The demo shows an Exposure Control Room experience where a user asks business qu
 
 CopilotKit describes Generative UI as a spectrum from developer-controlled components to fully agent-generated interfaces. This demo intentionally uses **Controlled Generative UI**, the most predictable band of that spectrum.
 
-In Controlled Generative UI, developers ship a fixed set of pre-built components and register them with the agent. At runtime, the agent chooses which component to render and supplies typed data for that component, but it cannot invent arbitrary markup, layouts, or visual surfaces. In this repository, the registered components include KPI strips, chart cards, narrative cards, approval cards, policy breach cards, follow-up questions, and insight tables.
+In Controlled Generative UI, developers ship a fixed set of pre-built components and register them with the agent. At runtime, the agent chooses which component to render and supplies typed data for that component, but it cannot invent arbitrary markup, layouts, or visual surfaces. In this repository, the registered components include KPI strips, chart cards, narrative cards, policy breach cards, follow-up questions, and insight tables.
 
-That model fits this demo because risk and exposure analytics need governed data access, deterministic visual payloads, and repeatable executive-facing UI. The agent can still make the experience feel dynamic by selecting the right visual for each business question, while the frontend keeps control over rendering, styling, validation, and user approval flows.
+That model fits this demo because risk and exposure analytics need governed data access, deterministic visual payloads, and repeatable executive-facing UI. The agent can still make the experience feel dynamic by selecting the right visual for each business question, while the frontend keeps control over rendering, styling, and validation.
 
 This is different from other bands in the CopilotKit Generative UI Spectrum:
 
@@ -38,7 +38,7 @@ Browser
   → /api/copilotkit
   → CopilotRuntime + AG-UI HttpAgent
   → Local FastAPI AG-UI bridge or Foundry Hosted Agent invocations endpoint
-  → LangGraph HITL + controlled UI mapping
+  → LangGraph supervisor + controlled UI mapping
   → Microsoft Foundry Prompt Agent
   → Databricks Genie MCP endpoint
   → Databricks SQL Warehouse + Unity Catalog demo view
@@ -53,10 +53,10 @@ The deployed Foundry project uses a two-agent design:
 
 | Agent | Type | Responsibility |
 | --- | --- | --- |
-| `risk-exposure-ag-ui-hosted` | Hosted Agent, Invocations protocol | Runs the custom AG-UI/LangGraph runtime, handles human approval, session orchestration, controlled UI events, and telemetry. |
+| `risk-exposure-ag-ui-hosted` | Hosted Agent, Invocations protocol | Runs the custom AG-UI/LangGraph runtime, handles session orchestration, controlled UI events, and telemetry. |
 | `risk-exposure-genie-agent` | Prompt Agent | Encapsulates governed Databricks Genie access through a Foundry MCP tool and the deployed model. |
 
-This separation keeps the UI orchestration and the governed analytics tool boundary explicit. CopilotKit talks to the AG-UI runtime; the runtime coordinates approval and invokes the Genie-backed prompt agent only when business data is needed. Both agents are visible in Foundry with sessions, traces, monitor metrics, and versioned deployment metadata.
+This separation keeps the UI orchestration and the governed analytics tool boundary explicit. CopilotKit talks to the AG-UI runtime; the runtime invokes the Genie-backed prompt agent only when business data is needed. Both agents are visible in Foundry with sessions, traces, monitor metrics, and versioned deployment metadata.
 
 <details>
 <summary>Foundry portal walkthrough</summary>
@@ -103,7 +103,7 @@ This is a **live Azure demo**, not an offline mock. The frontend can run locally
    Follow [docs/local-development.md](docs/local-development.md) to configure `apps/web/.env.local`, authenticate with Azure CLI, and start the Next.js app. If you want the frontend hosted in Azure too, enable the optional App Service resource in `infra/main.demo.bicepparam` and follow [docs/azure-setup.md](docs/azure-setup.md#11-optional-deploy-the-nextjs-frontend-to-azure-app-service).
 
 4. **Run the live demo**
-   Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates approval, conversational memory, traces, and rich visual components.
+   Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates conversational memory, traces, and rich visual components.
 
 ## Quick local frontend run
 
