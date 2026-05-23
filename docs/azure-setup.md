@@ -185,7 +185,6 @@ The script grants the Foundry project managed identity:
 
 This checks Databricks warehouse metadata, Genie Space metadata, and Foundry connection metadata. It does not invoke Genie.
 
-
 ## 10. Optional: deploy the AG-UI runtime as a Foundry Hosted Agent
 
 Run this only when you want the LangGraph/AG-UI runtime to move from local FastAPI to Microsoft Foundry Agent Service. Complete steps 6-8 first so the hosted runtime can call the Foundry prompt agent and the prompt agent can call Genie.
