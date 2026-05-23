@@ -10,6 +10,7 @@ dependencies = [
     "pyyaml>=6.0.0,<7.0.0",
     "azure-ai-projects>=2.0.0b2",
     "azure-identity>=1.17.0",
+    "azure-ai-agentserver-core==2.0.0b3",
     "azure-ai-agentserver-invocations==1.0.0b3",
     "langchain-azure-ai[opentelemetry]>=1.2.3,<2.0.0",
     "langgraph>=1.0.0",
