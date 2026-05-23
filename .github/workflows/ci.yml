@@ -17,9 +17,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: apps/agent/pyproject.toml
       - run: npm ci
       - run: python -m pip install --upgrade pip && python -m pip install -e 'apps/agent[dev]'
       - run: npm run validate:agent
       - run: npm run lint:web
       - run: npm run test:web
       - run: npm run build:web
+
+  bicep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bicep CLI
+        run: az bicep install
+      - name: Build infra/main.bicep
+        run: az bicep build --file infra/main.bicep
+
+  markdown-lint:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v17
+        with:
+          globs: '**/*.md'

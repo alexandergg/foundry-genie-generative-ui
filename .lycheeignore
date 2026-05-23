@@ -1,0 +1,10 @@
+# URLs to exclude from link-checking.
+# One pattern per line. Regex is supported.
+
+# Local development URLs surface in docs and are not reachable from CI.
+^https?://localhost(:[0-9]+)?(/.*)?$
+^https?://127\.0\.0\.1(:[0-9]+)?(/.*)?$
+^https?://0\.0\.0\.0(:[0-9]+)?(/.*)?$
+
+# Example placeholders.
+^https?://example\.com(/.*)?$
