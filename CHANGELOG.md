@@ -39,6 +39,9 @@ Initial public release. Demo of Generative UI on Microsoft Foundry hosted agents
   - New `bicep` job running `az bicep build infra/main.bicep` so IaC typos fail fast.
   - New `markdown-lint` job (informational while existing docs stabilize).
 - New `link-check` workflow using `lychee`, scheduled weekly and triggerable manually — kept off the PR critical path so external link flakiness does not gate merges.
+- `.github/dependabot.yml` watching GitHub Actions, npm (with grouped updates for `next`, `@copilotkit/*`, `@ag-ui/*`, and `@types/*`), and pip in `apps/agent`.
+- README badges for CI status, license, changelog format, ruff, Next.js, and Python.
+- `.editorconfig`, `.nvmrc`, and `.python-version` so editors and version managers pick the same runtimes as CI.
 
 ### Changed
 
