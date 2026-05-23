@@ -1,6 +1,15 @@
 # Risk & Exposure Intelligence Copilot
 
 <p align="center">
+  <a href="https://github.com/alexandergg/foundry-genie-generative-ui/actions/workflows/ci.yml"><img src="https://github.com/alexandergg/foundry-genie-generative-ui/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/alexandergg/foundry-genie-generative-ui?color=blue" alt="License: MIT" /></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange" alt="Keep a Changelog" /></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff" /></a>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs" alt="Next.js 15" /></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" alt="Python 3.12" /></a>
+</p>
+
+<p align="center">
   <img src="docs/assets/demo.gif" alt="Demo: a governed Databricks Genie query through Azure AI Foundry and the analytics dashboard rendering controlled React visuals" width="900" />
 </p>
 
