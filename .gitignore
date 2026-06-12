@@ -1,7 +1,5 @@
 # Dependencies
 node_modules/
-apps/agent/.venv/
-apps/agent/.venv-foundry-genie/
 .venv/
 .venv-foundry-genie/
 
@@ -10,7 +8,6 @@ apps/agent/.venv-foundry-genie/
 dist/
 build/
 coverage/
-apps/web/.next/
 
 # Python artifacts
 __pycache__/
@@ -26,8 +23,8 @@ __pycache__/
 .env
 .env.*
 !.env.example
-apps/web/.env.local
-apps/agent/.env
+apps/*/web/.env.local
+apps/*/agent/.env
 .risk.env.local
 .foundry/agent-metadata.yaml
 .azure/
