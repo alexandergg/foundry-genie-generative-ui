@@ -6,7 +6,7 @@ Demonstrate that a user can ask governed business questions, receive visual answ
 
 ## Before the session
 
-1. Run `npm run validate` for a full local quality check, or `npm run validate:agent` and `npm run validate:web` for scoped checks.
+1. Run `npm run validate` for a full local quality check, or `npm run validate:controlled-agent` and `npm run validate:controlled-web` for scoped checks.
 2. Start the SQL Warehouse if needed, then stop it after the session to control cost.
 3. Recommended: run only the frontend locally and point the web BFF at the Foundry Hosted Agent Invocations endpoint. Alternative: start both the local AG-UI bridge and web app for backend development.
 4. Open <http://localhost:3000>.

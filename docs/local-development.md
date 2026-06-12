@@ -23,17 +23,17 @@ az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 
 ```bash
 npm install
-npm run install:agent
+npm run install:controlled-agent
 ```
 
 ## Configure environment
 
 ```bash
-cp apps/web/.env.example apps/web/.env.local
-cp apps/agent/.env.example apps/agent/.env
+cp apps/controlled/web/.env.example apps/controlled/web/.env.local
+cp apps/controlled/agent/.env.example apps/controlled/agent/.env
 ```
 
-For the recommended frontend-only local run, `apps/agent/.env` is not needed because the backend runtime is the deployed Hosted Agent. For local bridge development, `apps/agent/.env` only needs overrides if you do not want to use `.foundry/agent-metadata.yaml`. The web app defaults to the local FastAPI AG-UI endpoint and can be pointed at a hosted Invocations endpoint with `AG_UI_AGENT_URL`.
+For the recommended frontend-only local run, `apps/controlled/agent/.env` is not needed because the backend runtime is the deployed Hosted Agent. For local bridge development, `apps/controlled/agent/.env` only needs overrides if you do not want to use `.foundry/agent-metadata.yaml`. The web app defaults to the local FastAPI AG-UI endpoint and can be pointed at a hosted Invocations endpoint with `AG_UI_AGENT_URL`.
 
 Important backend settings:
 
@@ -61,10 +61,10 @@ Observability settings are normally produced by the infra deployment. Keep the A
 Use this path for demos after the Hosted Agent is deployed in Foundry.
 
 ```bash
-cp apps/web/.env.example apps/web/.env.local
+cp apps/controlled/web/.env.example apps/controlled/web/.env.local
 ```
 
-Set `apps/web/.env.local` to call the Foundry Hosted Agent Invocations endpoint:
+Set `apps/controlled/web/.env.local` to call the Foundry Hosted Agent Invocations endpoint:
 
 ```bash
 AG_UI_AGENT_URL="https://<hosted-agent-invocations-endpoint>"
@@ -75,16 +75,16 @@ AG_UI_AGENT_SCOPE="https://ai.azure.com/.default"
 Then start only the web app:
 
 ```bash
-npm run dev:web
+npm run dev:controlled-web
 ```
 
 Open <http://localhost:3000>. The browser talks to local Next.js; local Next.js acquires an Entra token server-side and forwards AG-UI traffic to the hosted agent.
 
 ## Run with the local AG-UI bridge
 
-Use this path when changing or debugging `apps/agent`. It still requires the deployed Foundry prompt Genie agent.
+Use this path when changing or debugging `apps/controlled/agent`. It still requires the deployed Foundry prompt Genie agent.
 
-In `apps/web/.env.local`, keep the local endpoint:
+In `apps/controlled/web/.env.local`, keep the local endpoint:
 
 ```bash
 AG_UI_AGENT_URL="http://localhost:8123"
@@ -94,13 +94,13 @@ AG_UI_AGENT_AUTH=""
 Terminal 1:
 
 ```bash
-npm run dev:agent
+npm run dev:controlled-agent
 ```
 
 Terminal 2:
 
 ```bash
-npm run dev:web
+npm run dev:controlled-web
 ```
 
 Open <http://localhost:3000>.
@@ -108,10 +108,10 @@ Open <http://localhost:3000>.
 To run the Foundry-hosted entrypoint locally with the Invocations host, use:
 
 ```bash
-npm run dev:agent:hosted
+npm run dev:controlled-agent:hosted
 ```
 
-That command expects `FOUNDRY_PROJECT_ENDPOINT` (or `RISK_GENIE_PROJECT_ENDPOINT` for hosted-agent parity) to be available through `apps/agent/.env`, the shell environment, or a Foundry local run command. Keep the regular `npm run dev:agent` flow for day-to-day backend work unless you are validating hosted-agent packaging. For the cloud ACR build and Hosted Agent handoff, follow [Azure setup step 10](azure-setup.md#10-optional-deploy-the-ag-ui-runtime-as-a-foundry-hosted-agent).
+That command expects `FOUNDRY_PROJECT_ENDPOINT` (or `RISK_GENIE_PROJECT_ENDPOINT` for hosted-agent parity) to be available through `apps/controlled/agent/.env`, the shell environment, or a Foundry local run command. Keep the regular `npm run dev:controlled-agent` flow for day-to-day backend work unless you are validating hosted-agent packaging. For the cloud ACR build and Hosted Agent handoff, follow [Azure setup step 10](azure-setup.md#10-optional-deploy-the-ag-ui-runtime-as-a-foundry-hosted-agent).
 
 ## Validate before presenting
 
