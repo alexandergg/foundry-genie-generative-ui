@@ -37,6 +37,10 @@ export const AddVisualParams = z.object({
 export const RemoveVisualParams = z.object({ id: z.string() });
 export const ChangeVisualTypeParams = z.object({ id: z.string(), type: z.enum(VISUAL_TYPES) });
 export const ReorderVisualsParams = z.object({ orderedIds: z.array(z.string()) });
+// View tools: `id` is required-but-nullable (the agent sends {"id": null} to clear),
+// so a partial mid-stream `{}` payload fails the parse instead of clearing early.
+export const SpotlightVisualParams = z.object({ id: z.string().nullable() });
+export const SetPresentationModeParams = z.object({ enabled: z.boolean() });
 
 export type CacheDatasetArgs = z.infer<typeof CacheDatasetParams>;
 export type AddVisualArgs = z.infer<typeof AddVisualParams>;

@@ -71,3 +71,37 @@ def test_clear_empties_visuals() -> None:
     ctx = extract_dashboard_context(messages)
     assert ctx["visuals"] == []
     assert len(ctx["datasets"]) == 1
+
+
+def test_view_replays_spotlight_and_presentation_mode() -> None:
+    visual_id = "vis-ds-1-barChartCard-Country-Exposure"
+    messages: list[AnyMessage] = [
+        _ai_tool_call(
+            "addVisual", {"datasetId": "ds-1", "type": "barChartCard", "dimension": "Country", "measure": "Exposure", "title": "Bar"}
+        ),
+        _ai_tool_call("spotlightVisual", {"id": visual_id}),
+        _ai_tool_call("setPresentationMode", {"enabled": True}),
+    ]
+    ctx = extract_dashboard_context(messages)
+    assert ctx["view"] == {"spotlightVisualId": visual_id, "presentationMode": True}
+
+
+def test_view_spotlight_cleared_with_null_or_removal() -> None:
+    visual_id = "vis-ds-1-barChartCard-Country-Exposure"
+    add = _ai_tool_call(
+        "addVisual", {"datasetId": "ds-1", "type": "barChartCard", "dimension": "Country", "measure": "Exposure", "title": "Bar"}
+    )
+
+    explicit_clear = extract_dashboard_context(
+        [add, _ai_tool_call("spotlightVisual", {"id": visual_id}), _ai_tool_call("spotlightVisual", {"id": None})]
+    )
+    assert explicit_clear["view"]["spotlightVisualId"] is None
+
+    removed = extract_dashboard_context(
+        [add, _ai_tool_call("spotlightVisual", {"id": visual_id}), _ai_tool_call("removeVisual", {"id": visual_id})]
+    )
+    assert removed["view"]["spotlightVisualId"] is None
+
+    cleared = extract_dashboard_context([add, _ai_tool_call("spotlightVisual", {"id": visual_id}), _ai_tool_call("clearDashboard", {})])
+    assert cleared["view"]["spotlightVisualId"] is None
+    assert cleared["view"]["presentationMode"] is False

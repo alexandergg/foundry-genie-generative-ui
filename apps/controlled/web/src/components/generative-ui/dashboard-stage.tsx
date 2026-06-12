@@ -11,6 +11,7 @@ import { RiskNarrativeCard } from "./risk-narrative-card";
 import { getDashboardSnapshot, subscribeDashboard } from "./dashboard-store";
 import { getProcessSnapshot, subscribeProcess } from "./process-store";
 import { getDataset, getDatasetsSnapshot, subscribeDatasets } from "./dataset-store";
+import { getViewSnapshot, subscribeView } from "./view-store";
 import { buildVisualProps, type DerivedProps } from "./dataset-derive";
 import type { VisualSpec } from "./dataset-types";
 import { StatusTimeline, formatDashboardPhase } from "./status-timeline";
@@ -78,7 +79,10 @@ export function DashboardStage() {
   const state = useSyncExternalStore(subscribeDashboard, getDashboardSnapshot, getDashboardSnapshot);
   useSyncExternalStore(subscribeDatasets, getDatasetsSnapshot, getDatasetsSnapshot);
   const process = useSyncExternalStore(subscribeProcess, getProcessSnapshot, getProcessSnapshot);
+  const view = useSyncExternalStore(subscribeView, getViewSnapshot, getViewSnapshot);
   const hasVisuals = state.visuals.length > 0;
+  // A stale spotlight id (visual removed since) means no spotlight at all.
+  const spotlightId = state.visuals.some((v) => v.id === view.spotlightVisualId) ? view.spotlightVisualId : null;
 
   return (
     <section className="dashboard-card" aria-label="Generative visualization panel">
@@ -122,7 +126,10 @@ export function DashboardStage() {
             <StatusTimeline process={process} />
           </div>
           {state.visuals.map((spec) => (
-            <div className={spanClass(spec.type)} key={spec.id}>
+            <div
+              className={`${spanClass(spec.type)}${spotlightId ? (spec.id === spotlightId ? " spotlighted" : " dimmed") : ""}`}
+              key={spec.id}
+            >
               {renderSpec(spec)}
             </div>
           ))}

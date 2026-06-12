@@ -208,6 +208,8 @@ async def dashboard_op(state: AgentState) -> dict[str, Any]:
         "changeVisualType",
         "reorderVisuals",
         "clearDashboard",
+        "spotlightVisual",
+        "setPresentationMode",
     }:
         return _state_update([AIMessage(content=decision.message or "I could not map that to a dashboard action.")], conversation_id)
 

@@ -8,7 +8,13 @@ from typing import Any, cast
 import yaml
 from dotenv import load_dotenv
 
-DEMO_ROOT = Path(__file__).resolve().parents[3]
+# Locally the repo root (which holds .foundry/) is four levels up from
+# apps/controlled/agent/src/config.py, but inside the hosted-agent container
+# the agent is copied flat to /app/user_agent and has no metadata at all —
+# walk up looking for .foundry/ and fall back to the agent directory so the
+# metadata path simply does not exist there.
+_HERE = Path(__file__).resolve()
+DEMO_ROOT = next((parent for parent in _HERE.parents if (parent / ".foundry").is_dir()), _HERE.parents[1])
 DEFAULT_METADATA_PATH = DEMO_ROOT / ".foundry" / "agent-metadata.yaml"
 METADATA_PATH = Path(os.getenv("FOUNDRY_METADATA_PATH", str(DEFAULT_METADATA_PATH))).expanduser().resolve()
 

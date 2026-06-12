@@ -279,17 +279,6 @@ tr:last-child td { border-bottom: 0; }
 .provenance-footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--rg-border); color: var(--rg-muted); font-size: 10.5px; line-height: 1.3; }
 .provenance-footer span { border: 1px solid rgba(20,20,19,.08); border-radius: 999px; padding: 4px 7px; background: rgba(255,255,255,.62); }
 .provenance-footer .provenance-warning { color: #8a5a10; border-color: rgba(198,132,40,.28); background: rgba(198,132,40,.08); }
-.approval-card { border-color: rgba(20, 20, 19, .12); background: linear-gradient(135deg, rgba(107,92,255,.045), rgba(255,255,255,.90)), #fff; animation: fadeUp .3s ease both; }
-.approval-card .viz-title { font-size: 15px; }
-.approval-intro { font-size: 13px; }
-.approval-details { display: grid; gap: 7px; margin: 12px 0; }
-.approval-details div { border: 1px solid var(--rg-border); border-radius: 13px; padding: 8px 10px; background: rgba(255,255,255,.62); }
-.approval-details dt { color: var(--rg-muted); font-size: 10.5px; font-weight: 650; letter-spacing: .045em; }
-.approval-details dd { margin: 3px 0 0; color: #37352f; font-size: 13px; line-height: 1.45; }
-.approval-revision { display: grid; gap: 7px; margin: 12px 0; color: var(--rg-muted); font-size: 12px; font-weight: 650; }
-.approval-revision textarea { width: 100%; resize: vertical; border: 1px solid var(--rg-border); border-radius: 13px; padding: 10px 12px; color: #37352f; background: rgba(255,255,255,.74); font: inherit; font-weight: 500; line-height: 1.4; }
-.approval-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.approval-button,
 .followup-button {
   border: 1px solid rgba(20,20,19,.10);
   border-radius: 999px;
@@ -302,10 +291,7 @@ tr:last-child td { border-bottom: 0; }
   box-shadow: 0 12px 24px rgba(20,20,19,.14);
   transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
 }
-.approval-button:hover,
 .followup-button:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 16px 32px rgba(20,20,19,.16); }
-.approval-button.secondary { background: #fbfaf7; color: #37352f; border-color: var(--rg-border); box-shadow: none; }
-.approval-button.danger { background: #9f2626; box-shadow: 0 12px 24px rgba(159,38,38,.16); }
 .followup-card { background: rgba(255,255,255,.92); animation: fadeUp .3s ease both; }
 .followup-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .followup-button { background: #fbfaf7; color: #37352f; border: 1px solid var(--rg-border); box-shadow: none; text-align: left; }
@@ -317,9 +303,78 @@ tr:last-child td { border-bottom: 0; }
 .tool-chip-status { color: var(--rg-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
 .chat-cursor { display: inline-block; width: 8px; height: 16px; margin-left: 2px; border-radius: 2px; background: #5b46ff; vertical-align: text-bottom; animation: typingPulse 1s ease-in-out infinite; }
 
+/* ── Spectrum family chrome (band 01 · Genie red) ──────────────────────── */
+.band-eyebrow {
+  color: #e02b16 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  font-size: 11px !important;
+}
+.band-title {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em !important;
+}
+.band-title em {
+  font-style: italic;
+  color: #e02b16;
+}
+.hero-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.spectrum-nav {
+  display: inline-flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--rg-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(31, 30, 26, 0.06);
+}
+.spectrum-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--rg-muted);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: color .16s ease, background .16s ease;
+}
+.spectrum-nav a b {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: .55;
+}
+.spectrum-nav a:hover { color: var(--text); background: rgba(255, 54, 33, 0.06); }
+.spectrum-nav a.current {
+  color: #fff;
+  background: linear-gradient(135deg, #d92b16, #ff5a3a);
+  box-shadow: 0 10px 22px rgba(255, 54, 33, 0.30);
+}
+.spectrum-nav a.current b { opacity: .8; }
+
+/* Agent-driven view controls (spotlightVisual / setPresentationMode). */
+.dashboard-visual { transition: opacity .28s ease, transform .28s ease, filter .28s ease; }
+.dashboard-visual.spotlighted { grid-column: 1 / -1; transform: scale(1.012); }
+.dashboard-visual.spotlighted .viz-card { border-color: rgba(91, 70, 255, .34); box-shadow: 0 34px 90px rgba(91, 70, 255, .17); }
+.dashboard-visual.dimmed { opacity: .35; filter: saturate(.6) blur(.4px); }
+.shell.presentation-mode { padding-top: 14px; }
+.shell.presentation-mode .hero { display: none; }
+.shell.presentation-mode .main-grid { max-width: none; }
+
 @media (max-width: 900px) {
   .minimal-hero { grid-template-columns: 1fr; }
   .status-pillbar { justify-content: flex-start; }
+  .hero-side { align-items: flex-start; }
   .shell { padding: 16px; }
   .dashboard-header { padding: 16px; }
   .dashboard-skeletons { grid-template-columns: 1fr; }

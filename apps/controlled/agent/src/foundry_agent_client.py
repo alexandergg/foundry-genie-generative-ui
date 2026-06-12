@@ -15,7 +15,16 @@ CONVERSATION_ID_KEY = "azure_ai_agents_conversation_id"
 Route = Literal["direct", "dashboard_op", "risk_data"]
 FoundryAgentState = dict[str, Any]
 
-_DASHBOARD_OP_TOOLS = ("addVisual", "removeVisual", "changeVisualType", "reorderVisuals", "clearDashboard", "none")
+_DASHBOARD_OP_TOOLS = (
+    "addVisual",
+    "removeVisual",
+    "changeVisualType",
+    "reorderVisuals",
+    "clearDashboard",
+    "spotlightVisual",
+    "setPresentationMode",
+    "none",
+)
 
 _TRANSCRIPT_MESSAGE_LIMIT = 8
 _TRANSCRIPT_TEXT_LIMIT = 1_200
@@ -186,8 +195,9 @@ class FoundryAgentClient:
             "the user's latest intent, and whether existing Foundry conversation context can answer the request. "
             "Return only a valid JSON object with keys: route, rationale. route must be one of: direct, dashboard_op, risk_data. "
             "Use route=dashboard_op when the user wants to change the EXISTING dashboard using data already retrieved earlier in this "
-            "conversation: add another chart/table from the same data, remove a visual, change a visual's chart type, reorder, or clear "
-            "the dashboard. Do not pick dashboard_op when no governed data has been retrieved yet. "
+            "conversation: add another chart/table from the same data, remove a visual, change a visual's chart type, reorder, clear "
+            "the dashboard, spotlight/highlight/zoom one visual, or enter/exit presentation mode. "
+            "Do not pick dashboard_op when no governed data has been retrieved yet. "
             "Use route=risk_data only when the latest user request needs governed Databricks Genie data: retrieving, calculating, "
             "filtering, comparing, ranking, aggregating, or visualizing risk exposure, claims, brokers, overdue balances, countries, "
             "quarters, risk classes, or a follow-up that needs new governed data not already retrieved. Use route=direct when the answer can be produced "
@@ -295,11 +305,15 @@ class FoundryAgentClient:
             "You manipulate an existing analytics dashboard by choosing ONE client tool to call. "
             "Use ONLY the cached datasets and on-screen visuals below — never request new governed data. "
             "Return only a valid JSON object with keys: tool, args, message. "
-            "tool must be one of: addVisual, removeVisual, changeVisualType, reorderVisuals, clearDashboard, none. "
+            "tool must be one of: addVisual, removeVisual, changeVisualType, reorderVisuals, clearDashboard, spotlightVisual, "
+            "setPresentationMode, none. "
             "For addVisual, args = {datasetId, type, dimension, measure, title}; pick `type` from "
             "[barChartCard, lineAreaChartCard, donutChartCard, metricComparisonChartCard, insightTable]; use a dataset column with role=dimension "
             "for `dimension` and one (or a list) with role=measure for `measure`. "
             "For removeVisual args = {id}; for changeVisualType args = {id, type}; for reorderVisuals args = {orderedIds}; for clearDashboard args = {}. "
+            'For spotlightVisual args = {id} to highlight/zoom one visual, or {"id": null} to clear the spotlight. '
+            "For setPresentationMode args = {enabled} with a boolean: true hides the app chrome for presenting, false restores it. "
+            "The context's `view` key reflects the current spotlight and presentation state. "
             "Resolve fuzzy references (e.g. 'the donut', 'the broker chart') to a visual id using its type/title/dimension. "
             "If several visuals match, set tool=none and put a short clarifying question in message. "
             "If the request cannot be satisfied from the cached data, set tool=none and explain in message. "

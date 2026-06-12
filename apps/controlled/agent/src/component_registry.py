@@ -15,6 +15,9 @@ CONTROLLED_COMPONENT_NAMES: tuple[str, ...] = (
     "changeVisualType",
     "reorderVisuals",
     "clearDashboard",
+    # View frontend tools (agent drives the app shell, not just the chat)
+    "spotlightVisual",
+    "setPresentationMode",
 )
 
 _CONTROLLED_COMPONENT_NAME_SET = frozenset(CONTROLLED_COMPONENT_NAMES)

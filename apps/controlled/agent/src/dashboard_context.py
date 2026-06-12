@@ -13,7 +13,16 @@ from typing import Any
 
 from langchain_core.messages import AnyMessage
 
-_DASHBOARD_TOOLS = {"cacheDataset", "addVisual", "removeVisual", "changeVisualType", "reorderVisuals", "clearDashboard"}
+_DASHBOARD_TOOLS = {
+    "cacheDataset",
+    "addVisual",
+    "removeVisual",
+    "changeVisualType",
+    "reorderVisuals",
+    "clearDashboard",
+    "spotlightVisual",
+    "setPresentationMode",
+}
 
 
 def visual_id_for(args: dict[str, Any]) -> str:
@@ -29,9 +38,10 @@ def _tool_calls(message: AnyMessage) -> list[dict[str, Any]]:
 
 
 def extract_dashboard_context(messages: Sequence[AnyMessage]) -> dict[str, Any]:
-    """Replay emitted dashboard tool calls into the current datasets + visuals."""
+    """Replay emitted dashboard tool calls into the current datasets + visuals + view state."""
     datasets: dict[str, dict[str, Any]] = {}
     visuals: dict[str, dict[str, Any]] = {}
+    view: dict[str, Any] = {"spotlightVisualId": None, "presentationMode": False}
 
     for message in messages:
         for call in _tool_calls(message):
@@ -59,6 +69,8 @@ def extract_dashboard_context(messages: Sequence[AnyMessage]) -> dict[str, Any]:
                 target_id = args.get("id")
                 if isinstance(target_id, str):
                     visuals.pop(target_id, None)
+                    if view["spotlightVisualId"] == target_id:
+                        view["spotlightVisualId"] = None
             elif name == "changeVisualType":
                 target_id = args.get("id")
                 target = visuals.get(target_id) if isinstance(target_id, str) else None
@@ -66,5 +78,11 @@ def extract_dashboard_context(messages: Sequence[AnyMessage]) -> dict[str, Any]:
                     target["type"] = args.get("type")
             elif name == "clearDashboard":
                 visuals.clear()
+                view["spotlightVisualId"] = None
+            elif name == "spotlightVisual":
+                target_id = args.get("id")
+                view["spotlightVisualId"] = target_id if isinstance(target_id, str) else None
+            elif name == "setPresentationMode":
+                view["presentationMode"] = bool(args.get("enabled"))
 
-    return {"datasets": list(datasets.values()), "visuals": list(visuals.values())}
+    return {"datasets": list(datasets.values()), "visuals": list(visuals.values()), "view": view}

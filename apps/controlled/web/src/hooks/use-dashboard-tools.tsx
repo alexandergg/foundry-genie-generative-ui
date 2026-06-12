@@ -9,6 +9,8 @@ import {
   RemoveVisualParams,
   ChangeVisualTypeParams,
   ReorderVisualsParams,
+  SpotlightVisualParams,
+  SetPresentationModeParams,
   safeDatasetFromArgs,
   safeVisualSpecFromArgs,
 } from "./dashboard-tools";
@@ -20,6 +22,7 @@ import {
   reorderVisuals,
   clearDashboard,
 } from "@/components/generative-ui/dashboard-store";
+import { setPresentationMode, setSpotlight } from "@/components/generative-ui/view-store";
 
 function Chip({ text }: { text: string }) {
   return <div className="chat-visual-sent">{text}</div>;
@@ -81,8 +84,26 @@ function ReorderBridge({ args }: { args: unknown }) {
 function ClearBridge() {
   useEffect(() => {
     clearDashboard();
+    setSpotlight(null);
   }, []);
   return <Chip text="Cleared dashboard" />;
+}
+
+function SpotlightBridge({ args }: { args: unknown }) {
+  useEffect(() => {
+    const parsed = SpotlightVisualParams.safeParse(args);
+    if (parsed.success) setSpotlight(parsed.data.id);
+  }, [args]);
+  return <Chip text={readString(args, "id") ? "Spotlighting visual" : "Spotlight cleared"} />;
+}
+
+function PresentationModeBridge({ args }: { args: unknown }) {
+  useEffect(() => {
+    const parsed = SetPresentationModeParams.safeParse(args);
+    if (parsed.success) setPresentationMode(parsed.data.enabled);
+  }, [args]);
+  const enabled = (args as { enabled?: unknown } | null | undefined)?.enabled === true;
+  return <Chip text={enabled ? "Presentation mode on" : "Presentation mode off"} />;
 }
 
 export function useDashboardTools() {
@@ -115,5 +136,15 @@ export function useDashboardTools() {
     name: "clearDashboard",
     parameters: z.object({}),
     render: () => <ClearBridge />,
+  });
+  useRenderTool({
+    name: "spotlightVisual",
+    parameters: SpotlightVisualParams,
+    render: ({ parameters }) => <SpotlightBridge args={parameters} />,
+  });
+  useRenderTool({
+    name: "setPresentationMode",
+    parameters: SetPresentationModeParams,
+    render: ({ parameters }) => <PresentationModeBridge args={parameters} />,
   });
 }

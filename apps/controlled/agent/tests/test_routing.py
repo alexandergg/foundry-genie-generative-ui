@@ -31,3 +31,16 @@ def test_parse_dashboard_op_decision_unknown_tool_falls_back_to_none() -> None:
     decision = client._parse_dashboard_op_decision('{"tool": "explode", "args": {}, "message": "nope"}')
     assert decision.tool == "none"
     assert decision.message == "nope"
+
+
+def test_parse_dashboard_op_decision_view_tools() -> None:
+    client = FoundryAgentClient.__new__(FoundryAgentClient)
+    spotlight = client._parse_dashboard_op_decision(
+        '{"tool": "spotlightVisual", "args": {"id": "vis-ds-1-barChartCard-Country-Exposure"}, "message": "Spotlighted."}'
+    )
+    assert spotlight.tool == "spotlightVisual"
+    assert spotlight.args == {"id": "vis-ds-1-barChartCard-Country-Exposure"}
+
+    presentation = client._parse_dashboard_op_decision('{"tool": "setPresentationMode", "args": {"enabled": true}, "message": "On."}')
+    assert presentation.tool == "setPresentationMode"
+    assert presentation.args == {"enabled": True}
