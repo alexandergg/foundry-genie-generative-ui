@@ -1,0 +1,339 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f1eb;
+  --text: #1f1e1a;
+  --rg-muted: #57534b;
+  --rg-border: rgba(31, 30, 26, 0.10);
+  --band: #5b46ff;
+  --band-soft: rgba(91, 70, 255, 0.10);
+  --shadow: 0 28px 90px rgba(31, 30, 26, 0.085);
+}
+
+/* CopilotKit v2 theme — same palette remap as the controlled demo so the three
+   demos read as one product family. */
+:root,
+[data-copilotkit] {
+  --background: #fbfaf6;
+  --foreground: #1f1e1a;
+  --card: #ffffff;
+  --card-foreground: #1f1e1a;
+  --popover: #ffffff;
+  --popover-foreground: #1f1e1a;
+  --primary: #5b46ff;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #1f1e1a;
+  --muted: #f2efe8;
+  --muted-foreground: #57534b;
+  --accent: #f2efe8;
+  --accent-foreground: #1f1e1a;
+  --border: rgba(31, 30, 26, 0.10);
+  --input: rgba(31, 30, 26, 0.12);
+  --ring: #5b46ff;
+}
+
+cpk-inspector,
+cpk-web-inspector { display: none !important; }
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+
+/* Blueprint paper: the band's signature. A fine grid fading out radially over
+   the family's warm paper, with a soft purple glow up top. */
+body {
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(91, 70, 255, 0.12), transparent 26rem),
+    radial-gradient(circle at 92% 8%, rgba(91, 70, 255, 0.06), transparent 16rem),
+    linear-gradient(180deg, #fbfaf6 0%, var(--bg) 68%, #eee9df 100%);
+  position: relative;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(91, 70, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 70, 255, 0.055) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 78%);
+}
+button, input, textarea { font: inherit; }
+
+.shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1280px;
+  height: 100vh;
+  margin: 0 auto;
+  padding: 22px 22px 18px;
+}
+
+/* ── Masthead ─────────────────────────────────────────────────────────── */
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.masthead-id { display: flex; align-items: center; gap: 16px; }
+.eyebrow {
+  margin: 0 0 3px;
+  color: var(--band);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+h1 {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(26px, 3.4vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+h1 em {
+  font-style: italic;
+  color: var(--band);
+}
+
+/* The assembling-blocks mark: four pieces snapping into a 2×2, on loop. */
+.assembly-mark {
+  position: relative;
+  display: grid;
+  grid-template-columns: 15px 15px;
+  grid-template-rows: 15px 15px;
+  gap: 5px;
+  padding: 12px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(91, 70, 255, 0.22);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #f3f0ff);
+  box-shadow: 0 16px 36px rgba(91, 70, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.assembly-mark i {
+  border-radius: 4.5px;
+  background: var(--band);
+  animation: snap 3.2s cubic-bezier(.6, -0.28, .35, 1.4) infinite;
+}
+.assembly-mark i:nth-child(1) { animation-delay: 0s; background: #4534d6; }
+.assembly-mark i:nth-child(2) { animation-delay: .22s; background: #5b46ff; }
+.assembly-mark i:nth-child(3) { animation-delay: .44s; background: #8a72ff; }
+.assembly-mark i:nth-child(4) { animation-delay: .66s; background: #b8adff; }
+@keyframes snap {
+  0%, 12% { transform: translate(0, 0) scale(1); }
+  18% { transform: translate(2px, -7px) scale(.72) rotate(10deg); opacity: .65; }
+  34%, 100% { transform: translate(0, 0) scale(1) rotate(0); opacity: 1; }
+}
+
+/* Spectrum nav: where we are on the spectrum, and one click to the others. */
+.spectrum-nav {
+  display: inline-flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--rg-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(31, 30, 26, 0.06);
+}
+.spectrum-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--rg-muted);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: color .16s ease, background .16s ease;
+}
+.spectrum-nav a b {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: .55;
+}
+.spectrum-nav a:hover { color: var(--text); background: rgba(91, 70, 255, 0.06); }
+.spectrum-nav a.current {
+  color: #fff;
+  background: linear-gradient(135deg, #4534d6, #6b5aff);
+  box-shadow: 0 10px 22px rgba(91, 70, 255, 0.32);
+}
+.spectrum-nav a.current b { opacity: .8; }
+
+/* ── Workspace: rail + chat ───────────────────────────────────────────── */
+.workspace {
+  display: grid;
+  grid-template-columns: 318px minmax(0, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+.rail-card {
+  border: 1px solid rgba(31, 30, 26, 0.085);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.62));
+  backdrop-filter: blur(20px);
+  box-shadow: 0 14px 40px rgba(31, 30, 26, 0.06);
+  padding: 16px;
+}
+.rail-kicker {
+  margin: 0 0 11px;
+  color: var(--rg-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.piece-wall { display: flex; flex-wrap: wrap; gap: 6px; }
+.piece {
+  padding: 5px 9px;
+  border: 1px solid rgba(91, 70, 255, 0.22);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #f6f4ff);
+  color: #4534d6;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(91, 70, 255, 0.08);
+  animation: pieceIn .5s cubic-bezier(.2, .9, .3, 1.3) both;
+  transition: transform .15s ease, box-shadow .15s ease;
+  cursor: default;
+}
+.piece:hover { transform: translateY(-2px) rotate(-1deg); box-shadow: 0 8px 18px rgba(91, 70, 255, 0.18); }
+@keyframes pieceIn {
+  from { opacity: 0; transform: translateY(7px) scale(.86); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.rail-note {
+  margin: 12px 0 0;
+  color: var(--rg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.rail-note code,
+.band-blurb code {
+  border: 1px solid var(--rg-border);
+  border-radius: 6px;
+  padding: 1px 5px;
+  background: #fbfaf7;
+  color: #4b3aff;
+  font-size: 11px;
+}
+
+.mode-card {
+  border: 1px solid var(--rg-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 11px 12px;
+}
+.mode-card + .mode-card { margin-top: 8px; }
+.mode-card p { margin: 6px 0 0; color: var(--rg-muted); font-size: 12px; line-height: 1.5; }
+.mode-head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.mode-head strong { font-weight: 700; letter-spacing: -0.01em; }
+.mode-dot { width: 9px; height: 9px; border-radius: 3px; }
+.mode-dot.fixed { background: #16895f; box-shadow: 0 0 0 4px rgba(22, 137, 95, 0.12); }
+.mode-dot.dynamic {
+  background: var(--band);
+  box-shadow: 0 0 0 4px rgba(91, 70, 255, 0.14);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+.mode-tag {
+  margin-left: auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f2efe8;
+  color: #57534b;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rail-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+.rail-pills span {
+  border: 1px solid var(--rg-border);
+  border-radius: 999px;
+  padding: 6px 11px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #4b4842;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* ── Chat panel ───────────────────────────────────────────────────────── */
+.chat-panel {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(31, 30, 26, 0.085);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.68));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(28px);
+}
+.chat-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 3px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(90deg, transparent, #5b46ff 22%, #8a72ff 78%, transparent);
+  opacity: .75;
+}
+/* CopilotChat wraps itself in a display:contents node, so the real flex item
+   is .copilotKitChat — stretch THAT to the panel. */
+.chat-panel > * { min-width: 0; }
+.chat-panel .copilotKitChat {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ── Entrance & motion hygiene ────────────────────────────────────────── */
+.reveal { animation: rise .6s cubic-bezier(.22, .8, .3, 1) both; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(.92); opacity: .55; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@media (max-width: 1020px) {
+  .shell { height: auto; min-height: 100vh; }
+  .workspace { grid-template-columns: 1fr; }
+  .rail { overflow: visible; }
+  .chat-panel { height: 72vh; }
+}
+@media (max-width: 640px) {
+  .shell { padding: 14px; }
+  .masthead { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assembly-mark i, .piece, .reveal, .mode-dot.dynamic { animation: none !important; }
+}

@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/AgentSchema/refs/heads/main/schemas/v1.0/ContainerAgent.yaml
+kind: hosted
+name: risk-declarative-a2ui-hosted
+protocols:
+  - protocol: invocations
+    version: 1.0.0
+resources:
+  cpu: "0.5"
+  memory: 1Gi
+environment_variables:
+  # FOUNDRY_* is a reserved prefix inside hosted-agent containers — use the
+  # RISK_MODEL_* names here (see src/config.py for the fallback order).
+  - name: RISK_MODEL_ENDPOINT
+    value: ""
+  - name: RISK_MODEL_DEPLOYMENT
+    value: "gpt-4o"
