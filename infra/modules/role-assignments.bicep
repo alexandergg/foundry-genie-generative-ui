@@ -4,8 +4,8 @@ param runtimePrincipalId string
 @description('Foundry project system-assigned managed identity principal ID.')
 param foundryProjectPrincipalId string
 
-@description('Optional frontend App Service system-assigned managed identity principal ID. Leave empty when the frontend App Service is not deployed.')
-param frontendPrincipalId string = ''
+@description('System-assigned managed identity principal IDs of the deployed frontend App Services (one per Generative UI band). Empty when no frontend is deployed.')
+param frontendPrincipalIds string[] = []
 
 @description('Key Vault resource ID.')
 param keyVaultResourceId string
@@ -104,12 +104,27 @@ resource foundryProjectKeyVaultSecretsUser 'Microsoft.Authorization/roleAssignme
   }
 }
 
-resource frontendFoundryCognitiveServicesUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(frontendPrincipalId)) {
-  name: guid(foundryAccount.id, frontendPrincipalId, 'frontend-foundry-cognitive-services-user')
+resource frontendFoundryCognitiveServicesUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = [
+  for principalId in frontendPrincipalIds: {
+    name: guid(foundryAccount.id, principalId, 'frontend-foundry-cognitive-services-user')
+    scope: foundryAccount
+    properties: {
+      principalId: principalId
+      principalType: 'ServicePrincipal'
+      roleDefinitionId: cognitiveServicesUserRoleId
+    }
+  }
+]
+
+// Hosted-agent containers run under the Foundry project identity; the
+// declarative and open-ended agents call the model deployment directly via
+// the OpenAI-compatible endpoint, which needs this role on the account.
+resource foundryProjectOpenAiUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundryAccount.id, foundryProjectPrincipalId, 'foundry-project-openai-user')
   scope: foundryAccount
   properties: {
-    principalId: frontendPrincipalId
+    principalId: foundryProjectPrincipalId
     principalType: 'ServicePrincipal'
-    roleDefinitionId: cognitiveServicesUserRoleId
+    roleDefinitionId: cognitiveServicesOpenAiUserRoleId
   }
 }

@@ -43,17 +43,35 @@ param databricksPublicNetworkAccess string = 'Enabled'
 ])
 param foundryPublicNetworkAccess string = 'Enabled'
 
-@description('Deploy an Azure App Service resource for the Next.js frontend. Disabled by default to avoid adding idle cost to local-only demos.')
-param deployFrontendApp bool = false
+@description('Deploy the controlled-band (Genie) Next.js frontend. Disabled by default to avoid adding idle cost to local-only demos.')
+param deployControlledFrontend bool = false
 
-@description('Foundry Hosted Agent Invocations endpoint used by the deployed frontend. Leave empty until the hosted agent exists, then update app settings or redeploy.')
-param frontendAgUiAgentUrl string = ''
+@description('Deploy the declarative-band (A2UI catalog) Next.js frontend.')
+param deployDeclarativeFrontend bool = false
 
-@description('App Service plan SKU name for the optional frontend.')
+@description('Deploy the open-ended-band (sandboxed UI + MCP Apps) Next.js frontend.')
+param deployOpenEndedFrontend bool = false
+
+@description('Foundry Hosted Agent Invocations endpoint for the controlled frontend. Leave empty until the hosted agent exists, then update app settings or redeploy.')
+param controlledFrontendAgentUrl string = ''
+
+@description('Foundry Hosted Agent Invocations endpoint for the declarative frontend.')
+param declarativeFrontendAgentUrl string = ''
+
+@description('Foundry Hosted Agent Invocations endpoint for the open-ended frontend.')
+param openEndedFrontendAgentUrl string = ''
+
+@description('App Service plan SKU name for the shared frontend plan (all deployed bands share one plan).')
 param frontendAppServicePlanSkuName string = 'B1'
 
-@description('App Service plan SKU tier for the optional frontend.')
+@description('App Service plan SKU tier matching frontendAppServicePlanSkuName.')
 param frontendAppServicePlanSkuTier string = 'Basic'
+
+@description('Container registry SKU. Keep aligned with the live registry to avoid accidental downgrades.')
+param containerRegistrySkuName string = 'Basic'
+
+@description('Whether the registry admin user is enabled. Keep aligned with the live registry.')
+param containerRegistryAdminUserEnabled bool = false
 
 @description('Whether to deploy the default Foundry model. Disable if capacity or quota is unavailable and use an existing deployment instead.')
 param deployFoundryModel bool = true
@@ -98,7 +116,14 @@ var containerRegistryName = take('cr${safeWorkload}${environmentName}${suffix}',
 var foundryAccountName = 'aif-${safeWorkload}-${environmentName}-${suffix}'
 var foundryProjectName = take('proj-${safeWorkload}-${environmentName}', 64)
 var frontendAppServicePlanName = 'asp-${safeWorkload}-${environmentName}-${suffix}'
-var frontendWebAppName = take('app-${safeWorkload}-${environmentName}-${suffix}', 60)
+var controlledWebAppName = take('app-${safeWorkload}-ctrl-${environmentName}-${suffix}', 60)
+var declarativeWebAppName = take('app-${safeWorkload}-decl-${environmentName}-${suffix}', 60)
+var openEndedWebAppName = take('app-${safeWorkload}-open-${environmentName}-${suffix}', 60)
+var deployAnyFrontend = deployControlledFrontend || deployDeclarativeFrontend || deployOpenEndedFrontend
+var frontendAlwaysOn = !contains([
+  'F1'
+  'D1'
+], frontendAppServicePlanSkuName)
 var existingDatabricksScopeName = empty(existingDatabricksResourceGroupName) ? resourceGroup().name : existingDatabricksResourceGroupName
 
 module analytics './modules/databricks.bicep' = if (deployDatabricksWorkspace) {
@@ -161,6 +186,8 @@ module containerRegistry './modules/container-registry.bicep' = {
   params: {
     location: location
     registryName: containerRegistryName
+    skuName: containerRegistrySkuName
+    adminUserEnabled: containerRegistryAdminUserEnabled
     tags: tags
   }
 }
@@ -185,15 +212,57 @@ module foundry './modules/foundry.bicep' = {
   }
 }
 
-module frontend './modules/frontend-app.bicep' = if (deployFrontendApp) {
-  name: 'risk-frontend-app'
+module frontendPlan './modules/frontend-plan.bicep' = if (deployAnyFrontend) {
+  name: 'risk-frontend-plan'
   params: {
     location: location
     appServicePlanName: frontendAppServicePlanName
-    webAppName: frontendWebAppName
     appServicePlanSkuName: frontendAppServicePlanSkuName
     appServicePlanSkuTier: frontendAppServicePlanSkuTier
-    agUiAgentUrl: frontendAgUiAgentUrl
+    tags: tags
+  }
+}
+
+module controlledFrontend './modules/frontend-app.bicep' = if (deployControlledFrontend) {
+  name: 'risk-frontend-controlled'
+  params: {
+    location: location
+    appServicePlanId: frontendPlan!.outputs.appServicePlanId
+    webAppName: controlledWebAppName
+    alwaysOn: frontendAlwaysOn
+    appCommandLine: 'node apps/controlled/web/server.js'
+    agUiAgentUrl: controlledFrontendAgentUrl
+    bandName: 'controlled'
+    applicationInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
+    tags: tags
+  }
+}
+
+module declarativeFrontend './modules/frontend-app.bicep' = if (deployDeclarativeFrontend) {
+  name: 'risk-frontend-declarative'
+  params: {
+    location: location
+    appServicePlanId: frontendPlan!.outputs.appServicePlanId
+    webAppName: declarativeWebAppName
+    alwaysOn: frontendAlwaysOn
+    appCommandLine: 'node apps/declarative/web/server.js'
+    agUiAgentUrl: declarativeFrontendAgentUrl
+    bandName: 'declarative'
+    applicationInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
+    tags: tags
+  }
+}
+
+module openEndedFrontend './modules/frontend-app.bicep' = if (deployOpenEndedFrontend) {
+  name: 'risk-frontend-open-ended'
+  params: {
+    location: location
+    appServicePlanId: frontendPlan!.outputs.appServicePlanId
+    webAppName: openEndedWebAppName
+    alwaysOn: frontendAlwaysOn
+    appCommandLine: 'node apps/open-ended/web/server.js'
+    agUiAgentUrl: openEndedFrontendAgentUrl
+    bandName: 'open-ended'
     applicationInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
     tags: tags
   }
@@ -204,7 +273,11 @@ module roleAssignments './modules/role-assignments.bicep' = {
   params: {
     runtimePrincipalId: identity.outputs.principalId
     foundryProjectPrincipalId: foundry.outputs.projectPrincipalId
-    frontendPrincipalId: deployFrontendApp ? frontend!.outputs.webAppPrincipalId : ''
+    frontendPrincipalIds: concat(
+      deployControlledFrontend ? [controlledFrontend!.outputs.webAppPrincipalId] : [],
+      deployDeclarativeFrontend ? [declarativeFrontend!.outputs.webAppPrincipalId] : [],
+      deployOpenEndedFrontend ? [openEndedFrontend!.outputs.webAppPrincipalId] : []
+    )
     keyVaultResourceId: keyVault.outputs.keyVaultResourceId
     foundryAccountResourceId: foundry.outputs.accountResourceId
     containerRegistryResourceId: containerRegistry.outputs.registryResourceId
@@ -229,9 +302,12 @@ output runtimeIdentityClientId string = identity.outputs.clientId
 output runtimeIdentityResourceId string = identity.outputs.identityResourceId
 output containerRegistryName string = containerRegistry.outputs.registryName
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
-output frontendWebAppName string = deployFrontendApp ? frontend!.outputs.webAppName : ''
-output frontendWebAppUrl string = deployFrontendApp ? 'https://${frontend!.outputs.webAppDefaultHostName}' : ''
-output frontendWebAppPrincipalId string = deployFrontendApp ? frontend!.outputs.webAppPrincipalId : ''
+output controlledFrontendUrl string = deployControlledFrontend ? 'https://${controlledFrontend!.outputs.webAppDefaultHostName}' : ''
+output controlledFrontendWebAppName string = deployControlledFrontend ? controlledFrontend!.outputs.webAppName : ''
+output declarativeFrontendUrl string = deployDeclarativeFrontend ? 'https://${declarativeFrontend!.outputs.webAppDefaultHostName}' : ''
+output declarativeFrontendWebAppName string = deployDeclarativeFrontend ? declarativeFrontend!.outputs.webAppName : ''
+output openEndedFrontendUrl string = deployOpenEndedFrontend ? 'https://${openEndedFrontend!.outputs.webAppDefaultHostName}' : ''
+output openEndedFrontendWebAppName string = deployOpenEndedFrontend ? openEndedFrontend!.outputs.webAppName : ''
 output foundryAccountName string = foundry.outputs.accountName
 output foundryEndpoint string = foundry.outputs.endpoint
 output foundryProjectName string = foundry.outputs.projectName

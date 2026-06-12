@@ -4,6 +4,12 @@ param location string
 @description('Azure Container Registry name. Must be globally unique, 5-50 lowercase alphanumeric chars.')
 param registryName string
 
+@description('Registry SKU. Basic is enough for new demos; keep Standard when the live registry was upgraded.')
+param skuName string = 'Basic'
+
+@description('Whether the admin user is enabled on the registry. Prefer managed-identity pulls; keep true only to match a live registry that depends on it.')
+param adminUserEnabled bool = false
+
 @description('Common resource tags.')
 param tags object
 
@@ -15,10 +21,10 @@ resource registry 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
     riskRole: 'hosted-agent-image-registry'
   })
   sku: {
-    name: 'Basic'
+    name: skuName
   }
   properties: {
-    adminUserEnabled: false
+    adminUserEnabled: adminUserEnabled
     publicNetworkAccess: 'Enabled'
     roleAssignmentMode: 'AbacRepositoryPermissions'
     policies: {

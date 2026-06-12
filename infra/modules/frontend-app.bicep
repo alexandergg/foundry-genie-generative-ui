@@ -1,22 +1,22 @@
 @description('Azure region for the frontend web app.')
 param location string
 
-@description('App Service plan name for the frontend.')
-param appServicePlanName string
+@description('Resource ID of the (shared) App Service plan hosting this web app.')
+param appServicePlanId string
 
-@description('Azure App Service web app name for the Next.js frontend.')
+@description('Azure App Service web app name for this Next.js frontend.')
 param webAppName string
 
-@description('App Service plan SKU name. B1 is suitable for demos; use a higher SKU for production.')
-param appServicePlanSkuName string = 'B1'
-
-@description('App Service plan SKU tier matching appServicePlanSkuName.')
-param appServicePlanSkuTier string = 'Basic'
+@description('Whether the plan SKU supports Always On (false for F1/D1).')
+param alwaysOn bool = true
 
 @description('Node.js runtime stack for the Linux App Service.')
 param nodeRuntimeVersion string = 'NODE|22-lts'
 
-@description('Foundry Hosted Agent Invocations endpoint used by the Next.js BFF. Leave empty until the hosted agent exists.')
+@description('Startup command pointing at the Next.js standalone server for this band, e.g. node apps/controlled/web/server.js.')
+param appCommandLine string
+
+@description('AG-UI agent endpoint used by the Next.js BFF (Foundry Hosted Agent Invocations endpoint). Leave empty until the hosted agent exists.')
 param agUiAgentUrl string = ''
 
 @description('Token scope used when the Next.js BFF authenticates to the Foundry Hosted Agent endpoint.')
@@ -26,30 +26,11 @@ param agUiAgentScope string = 'https://ai.azure.com/.default'
 @secure()
 param applicationInsightsConnectionString string = ''
 
+@description('Band label used in resource tags (controlled / declarative / open-ended).')
+param bandName string
+
 @description('Common resource tags.')
 param tags object
-
-var appServiceAlwaysOn = !contains([
-  'F1'
-  'D1'
-], appServicePlanSkuName)
-
-resource appServicePlan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: appServicePlanName
-  location: location
-  tags: union(tags, {
-    component: 'app-service-plan'
-    riskRole: 'frontend-hosting'
-  })
-  sku: {
-    name: appServicePlanSkuName
-    tier: appServicePlanSkuTier
-  }
-  kind: 'linux'
-  properties: {
-    reserved: true
-  }
-}
 
 resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   name: webAppName
@@ -57,19 +38,20 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   tags: union(tags, {
     component: 'app-service'
     riskRole: 'nextjs-frontend'
+    genUiBand: bandName
   })
   kind: 'app,linux'
   identity: {
     type: 'SystemAssigned'
   }
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: appServicePlanId
     httpsOnly: true
     publicNetworkAccess: 'Enabled'
     siteConfig: {
       linuxFxVersion: nodeRuntimeVersion
-      appCommandLine: 'node apps/web/server.js'
-      alwaysOn: appServiceAlwaysOn
+      appCommandLine: appCommandLine
+      alwaysOn: alwaysOn
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
       http20Enabled: true
@@ -115,4 +97,3 @@ output webAppName string = webApp.name
 output webAppResourceId string = webApp.id
 output webAppDefaultHostName string = webApp.properties.defaultHostName
 output webAppPrincipalId string = webApp.identity.principalId
-output appServicePlanName string = appServicePlan.name
