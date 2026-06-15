@@ -43,4 +43,4 @@ fi
 if [[ -f hosted_main.py ]]; then
   "$PYTHON_BIN" -m py_compile hosted_main.py
 fi
-find src -name '*.py' -print0 | xargs -0 "$PYTHON_BIN" -m py_compile
+"$PYTHON_BIN" -m compileall -q src
