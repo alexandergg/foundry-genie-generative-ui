@@ -15,6 +15,7 @@ One agent, one component catalog, two schemas:
 
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Annotated, Any, Literal, TypedDict
 
@@ -31,7 +32,7 @@ from .history import last_user_message, repair_orphan_tool_calls
 from .llm import get_chat_model
 from .observability import build_trace_callbacks
 from .planner import canned_summary, plan_report
-from .report_catalog import RENDER_TOOL_NAME, build_report_operations
+from .report_catalog import RENDER_TOOL_NAME, RISK_CATALOG_ID, build_report_operations
 from .sample_data import DEFAULT_QUARTER, QUARTERS, LayoutId, build_report_view, dataset_json
 
 APP_AGENT_NAME = "default"
@@ -137,9 +138,37 @@ def _a2ui_schema_from(ag_ui: dict[str, Any]) -> str | None:
     return None
 
 
-def _dynamic_system_prompt(schema: str) -> str:
+def _catalog_id_from(ag_ui: dict[str, Any]) -> str:
+    """The catalog id the dynamically composed surface must bind to.
+
+    The ``@ag-ui/a2ui-middleware`` stamps ``createSurface`` with the model's
+    ``render_a2ui`` ``catalogId`` argument, falling back to the v0.9 *basic*
+    catalog when the model omits it. This app registers only its own catalog
+    (``includeBasicCatalog: false``), so a basic-catalog surface fails to render
+    ("Catalog not found"). Honor the id the client shipped in the schema; else
+    pin this app's known catalog so the surface never falls back to the basic
+    one. (The fixed schema already stamps it via ``a2ui.create_surface``.)
+    """
+    schema = ag_ui.get("a2ui_schema")
+    if isinstance(schema, str) and schema:
+        try:
+            parsed = json.loads(schema)
+        except (TypeError, ValueError):
+            parsed = None
+        if isinstance(parsed, dict):
+            catalog_id = parsed.get("catalogId")
+            if isinstance(catalog_id, str) and catalog_id:
+                return catalog_id
+    return RISK_CATALOG_ID
+
+
+def _dynamic_system_prompt(schema: str, catalog_id: str) -> str:
     return (
         f"{a2ui_prompt(schema)}\n\n"
+        "## CATALOG BINDING\n"
+        f'CRITICAL: every render_a2ui call MUST include the argument "catalogId": "{catalog_id}". '
+        "The surface binds to that catalog; omitting it falls back to a catalog this app does not "
+        "register, and the UI fails to render.\n\n"
         "## DOMAIN\n"
         "You are composing a governed risk view for this energy-portfolio dataset (amounts in million EUR). "
         "Pick whichever catalog components fit best (Metric, BarChart, PieChart, DataTable, DashboardCard, Badge…), "
@@ -158,6 +187,7 @@ async def generate_dynamic(state: AgentState) -> dict[str, Any]:
     if schema is None or render_tool is None:
         return {"messages": [AIMessage(content=MISSING_DYNAMIC_MESSAGE)]}
 
+    catalog_id = _catalog_id_from(ag_ui)
     try:
         # Stream (not invoke): the AG-UI bridge turns on_chat_model_stream
         # chunks into TOOL_CALL events, which is what lets the A2UI middleware
@@ -165,7 +195,7 @@ async def generate_dynamic(state: AgentState) -> dict[str, Any]:
         model = get_chat_model().bind_tools([render_tool])
         history = repair_orphan_tool_calls(list(messages))
         response: Any = None
-        async for chunk in model.astream([SystemMessage(content=_dynamic_system_prompt(schema)), *history]):
+        async for chunk in model.astream([SystemMessage(content=_dynamic_system_prompt(schema, catalog_id)), *history]):
             response = chunk if response is None else response + chunk
     except Exception as exc:
         return {"messages": [AIMessage(content=f"I could not reach the Foundry model. Safe technical detail: {type(exc).__name__}: {exc}")]}

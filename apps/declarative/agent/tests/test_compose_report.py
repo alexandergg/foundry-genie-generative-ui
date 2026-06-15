@@ -129,6 +129,37 @@ async def test_graph_routes_freeform_through_generate_dynamic(monkeypatch) -> No
     assert final.tool_calls and final.tool_calls[0]["name"] == RENDER_A2UI_TOOL_NAME
 
 
+def test_catalog_id_resolves_from_shipped_schema_then_falls_back() -> None:
+    from src.graph import _catalog_id_from
+
+    # Client may ship the catalog as a wrapped schema object — honor its id.
+    assert _catalog_id_from({"a2ui_schema": '{"catalogId": "copilotkit://custom", "components": []}'}) == "copilotkit://custom"
+    # A bare components array carries no id — fall back to this app's catalog.
+    assert _catalog_id_from({"a2ui_schema": '[{"name": "Metric"}]'}) == RISK_CATALOG_ID
+    # Nothing shipped at all — still bind to the app's catalog, never the basic one.
+    assert _catalog_id_from({}) == RISK_CATALOG_ID
+
+
+async def test_generate_dynamic_instructs_model_to_bind_custom_catalog(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    fake = FakeChatModel()
+    monkeypatch.setattr(graph_module, "get_chat_model", lambda: fake)
+
+    state: AgentState = {
+        "messages": [HumanMessage(content="Compose a dashboard your way")],
+        "ag-ui": {"a2ui_schema": '[{"name": "Metric"}]', "tools": [RENDER_A2UI_TOOL]},
+    }
+    await generate_dynamic(state)
+
+    system = fake.received_messages[0]
+    assert isinstance(system, SystemMessage)
+    # The @ag-ui/a2ui-middleware stamps the surface catalog from the model's
+    # render_a2ui "catalogId" arg, defaulting to the basic catalog when absent —
+    # which the frontend never registers (includeBasicCatalog: false), so the
+    # surface fails with "Catalog not found". The prompt must pin the real id.
+    assert RISK_CATALOG_ID in str(system.content)
+    assert "catalogId" in str(system.content)
+
+
 async def test_generate_dynamic_degrades_without_injected_tool() -> None:
     state: AgentState = {"messages": [HumanMessage(content="Compose a dashboard your way")]}
     result = await generate_dynamic(state)
