@@ -1,5 +1,5 @@
 ---
-applyTo: "apps/agent/**/*.py,apps/agent/pyproject.toml,apps/agent/tests/**/*.py"
+applyTo: "apps/*/agent/**/*.py,apps/*/agent/pyproject.toml"
 ---
 
 # Python agent instructions

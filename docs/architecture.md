@@ -35,15 +35,15 @@ Show a cutting-edge Generative UI pattern for enterprise analytics: natural-lang
 
 | Area | Path | Responsibility |
 | --- | --- | --- |
-| Web app | `apps/web` | Next.js, CopilotKit runtime route, chat shell, controlled UI components |
-| Agent runtime | `apps/agent` | Local FastAPI AG-UI endpoint, Foundry Hosted Agent Invocations entrypoint, LangGraph supervisor routing, Foundry invocation, visualization mapping |
+| Web app | `apps/controlled/web` | Next.js, CopilotKit runtime route, chat shell, controlled UI components |
+| Agent runtime | `apps/controlled/agent` | Local FastAPI AG-UI endpoint, Foundry Hosted Agent Invocations entrypoint, LangGraph supervisor routing, Foundry invocation, visualization mapping |
 | Azure infra | `infra` | Optional Databricks workspace, ADLS Gen2, Microsoft Foundry project/model deployment, Key Vault, managed identity, Azure Container Registry, Log Analytics, Application Insights, Foundry tracing connections |
 | Databricks setup | `databricks/sql` and `scripts` | Demo data, SQL warehouse, Genie Space, permissions |
 | Foundry setup | `scripts/setup-foundry-genie-agent.sh` | RemoteTool connection and Prompt Agent version |
 
 ## Azure-native hosted agent path
 
-The recommended cloud shape keeps CopilotKit/AG-UI for the web experience, but runs the custom AG-UI/LangGraph runtime as a **Microsoft Foundry Hosted Agent** using the **Invocations** protocol. The hosted entrypoint is `apps/agent/hosted_main.py`; local development can continue to use `main.py` and FastAPI on port 8123.
+The recommended cloud shape keeps CopilotKit/AG-UI for the web experience, but runs the custom AG-UI/LangGraph runtime as a **Microsoft Foundry Hosted Agent** using the **Invocations** protocol. The hosted entrypoint is `apps/controlled/agent/hosted_main.py`; local development can continue to use `main.py` and FastAPI on port 8123.
 
 Foundry Hosted Agents provide the Azure-managed container endpoint, lifecycle, identity, and telemetry boundary for custom agent code. Invocations is used instead of the Responses protocol because AG-UI is a custom streaming UI protocol and the runtime must emit deterministic component/tool events.
 

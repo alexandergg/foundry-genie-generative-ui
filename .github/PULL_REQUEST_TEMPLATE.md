@@ -15,8 +15,8 @@
 
 ## Affected area
 
-- [ ] `apps/agent`
-- [ ] `apps/web`
+- [ ] `apps/<band>/agent`
+- [ ] `apps/<band>/web`
 - [ ] `infra/`
 - [ ] `scripts/`
 - [ ] `docs/`
@@ -24,7 +24,7 @@
 
 ## Checklist
 
-- [ ] `npm run validate` passes locally (or the relevant subset: `validate:agent`, `validate:web`).
+- [ ] `npm run validate` passes locally (or the relevant subset: `validate:<band>-agent`, `validate:<band>-web`).
 - [ ] `pre-commit run --all-files` passes (ruff, format, hooks).
 - [ ] Docs (`README.md`, `docs/`, `AGENTS.md`) updated when behavior, scripts, or setup change.
 - [ ] `CHANGELOG.md` updated under `[Unreleased]` if this PR introduces a user-visible change (skip for pure chores / internal refactors).

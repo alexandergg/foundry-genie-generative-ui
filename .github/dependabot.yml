@@ -34,7 +34,10 @@ updates:
           - "@types/*"
 
   - package-ecosystem: "pip"
-    directory: "/apps/agent"
+    directories:
+      - "/apps/controlled/agent"
+      - "/apps/declarative/agent"
+      - "/apps/open-ended/agent"
     schedule:
       interval: "weekly"
       day: "monday"

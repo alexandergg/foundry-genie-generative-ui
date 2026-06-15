@@ -1,0 +1,346 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f1eb;
+  --text: #1f1e1a;
+  --rg-muted: #57534b;
+  --rg-border: rgba(31, 30, 26, 0.10);
+  --ember: #ff3621;
+  --violet: #5b46ff;
+  --amber: #b87521;
+  --shadow: 0 28px 90px rgba(31, 30, 26, 0.085);
+}
+
+/* CopilotKit v2 theme — same palette remap as the controlled demo so the three
+   demos read as one product family. */
+:root,
+[data-copilotkit] {
+  --background: #fbfaf6;
+  --foreground: #1f1e1a;
+  --card: #ffffff;
+  --card-foreground: #1f1e1a;
+  --popover: #ffffff;
+  --popover-foreground: #1f1e1a;
+  --primary: #5b46ff;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #1f1e1a;
+  --muted: #f2efe8;
+  --muted-foreground: #57534b;
+  --accent: #f2efe8;
+  --accent-foreground: #1f1e1a;
+  --border: rgba(31, 30, 26, 0.10);
+  --input: rgba(31, 30, 26, 0.12);
+  --ring: #5b46ff;
+}
+
+cpk-inspector,
+cpk-web-inspector { display: none !important; }
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+
+/* The edge of the spectrum: the family's warm paper, but the light bleeding in
+   from both ends — ember red and violet — with a faint diagonal energy. */
+body {
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 12% -10%, rgba(255, 54, 33, 0.11), transparent 24rem),
+    radial-gradient(circle at 88% -6%, rgba(91, 70, 255, 0.13), transparent 26rem),
+    radial-gradient(circle at 50% 115%, rgba(184, 117, 33, 0.08), transparent 30rem),
+    linear-gradient(180deg, #fbfaf6 0%, var(--bg) 68%, #eee9df 100%);
+  position: relative;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    -38deg,
+    transparent 0 22px,
+    rgba(31, 30, 26, 0.022) 22px 23px
+  );
+  -webkit-mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 25%, transparent 80%);
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 25%, transparent 80%);
+}
+button, input, textarea { font: inherit; }
+
+.shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1280px;
+  height: 100vh;
+  margin: 0 auto;
+  padding: 22px 22px 18px;
+}
+
+/* ── Masthead ─────────────────────────────────────────────────────────── */
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.masthead-id { display: flex; align-items: center; gap: 16px; }
+.eyebrow {
+  margin: 0 0 3px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+  background: linear-gradient(90deg, var(--ember), var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+h1 {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(26px, 3.4vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+h1 em {
+  font-style: italic;
+  background: linear-gradient(100deg, var(--ember) 10%, var(--violet) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The spark: rays that slowly turn around a flaring core. */
+.spark-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 54, 33, 0.18);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.55) 55%, rgba(255, 54, 33, 0.07)),
+    #fff;
+  box-shadow: 0 16px 36px rgba(255, 54, 33, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+}
+.spark-mark .ray {
+  position: absolute;
+  width: 26px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ember), var(--violet));
+}
+.spark-mark .r1 { animation: sparkSpin1 9s linear infinite; }
+.spark-mark .r2 { animation: sparkSpin2 9s linear infinite; }
+.spark-mark .r3 { animation: sparkSpin3 9s linear infinite; }
+@keyframes sparkSpin1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes sparkSpin2 { from { transform: rotate(60deg); } to { transform: rotate(420deg); } }
+@keyframes sparkSpin3 { from { transform: rotate(120deg); } to { transform: rotate(480deg); } }
+.spark-mark .core {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff 25%, var(--ember) 70%);
+  box-shadow: 0 0 14px rgba(255, 54, 33, 0.65);
+  animation: corePulse 2.2s ease-in-out infinite;
+}
+@keyframes corePulse {
+  0%, 100% { transform: scale(.8); }
+  50% { transform: scale(1.25); }
+}
+
+/* Spectrum nav (shared family component; band 03 active in ember→violet). */
+.spectrum-nav {
+  display: inline-flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--rg-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(31, 30, 26, 0.06);
+}
+.spectrum-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--rg-muted);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: color .16s ease, background .16s ease;
+}
+.spectrum-nav a b {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: .55;
+}
+.spectrum-nav a:hover { color: var(--text); background: rgba(255, 54, 33, 0.06); }
+.spectrum-nav a.current {
+  color: #fff;
+  background: linear-gradient(120deg, #e22f1c, #6b3df0);
+  box-shadow: 0 10px 22px rgba(255, 54, 33, 0.28);
+}
+.spectrum-nav a.current b { opacity: .8; }
+
+/* ── Workspace: rail + chat ───────────────────────────────────────────── */
+.workspace {
+  display: grid;
+  grid-template-columns: 318px minmax(0, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+.rail-card {
+  border: 1px solid rgba(31, 30, 26, 0.085);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.62));
+  backdrop-filter: blur(20px);
+  box-shadow: 0 14px 40px rgba(31, 30, 26, 0.06);
+  padding: 16px;
+}
+.rail-kicker {
+  margin: 0 0 11px;
+  color: var(--rg-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mech-card {
+  border: 1px solid var(--rg-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 12px;
+}
+.mech-card + .mech-card { margin-top: 8px; }
+.mech-card p { margin: 7px 0 0; color: var(--rg-muted); font-size: 12px; line-height: 1.55; }
+.mech-card code {
+  border: 1px solid var(--rg-border);
+  border-radius: 6px;
+  padding: 1px 5px;
+  background: #fbfaf7;
+  color: #c22914;
+  font-size: 11px;
+}
+.mech-head { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
+.mech-head strong { font-weight: 700; letter-spacing: -0.01em; }
+.mech-glyph {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+.code-glyph { background: rgba(255, 54, 33, 0.10); color: #c22914; border: 1px solid rgba(255, 54, 33, 0.22); }
+.app-glyph { background: rgba(91, 70, 255, 0.10); color: #4534d6; border: 1px solid rgba(91, 70, 255, 0.22); font-size: 13px; }
+
+.rail-card.caution {
+  border-color: rgba(184, 117, 33, 0.28);
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.92), rgba(255, 255, 255, 0.66));
+}
+.rail-card.caution .rail-kicker { color: var(--amber); }
+.caution-note { margin: 0; color: #6d5230; font-size: 12px; line-height: 1.55; }
+
+.rail-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+.rail-pills span {
+  border: 1px solid var(--rg-border);
+  border-radius: 999px;
+  padding: 6px 11px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #4b4842;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* ── Chat panel with the living border ────────────────────────────────── */
+/* A slow conic sweep runs around the frame: the band's "unbounded" signature. */
+@property --sweep {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.panel-frame {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  padding: 1.5px;
+  border-radius: 27px;
+  background: conic-gradient(
+    from var(--sweep),
+    rgba(255, 54, 33, 0.55),
+    rgba(184, 117, 33, 0.30),
+    rgba(91, 70, 255, 0.55),
+    rgba(255, 54, 33, 0.55)
+  );
+  animation: sweep 14s linear infinite;
+  box-shadow: var(--shadow);
+}
+@keyframes sweep {
+  from { --sweep: 0deg; }
+  to { --sweep: 360deg; }
+}
+.chat-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 25.5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
+  backdrop-filter: blur(28px);
+}
+/* CopilotChat wraps itself in a display:contents node, so the real flex item
+   is .copilotKitChat — stretch THAT to the panel. */
+.chat-panel > * { min-width: 0; }
+.chat-panel .copilotKitChat {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ── Entrance & motion hygiene ────────────────────────────────────────── */
+.reveal { animation: rise .6s cubic-bezier(.22, .8, .3, 1) both; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1020px) {
+  .shell { height: auto; min-height: 100vh; }
+  .workspace { grid-template-columns: 1fr; }
+  .rail { overflow: visible; }
+  .panel-frame { height: 72vh; }
+}
+@media (max-width: 640px) {
+  .shell { padding: 14px; }
+  .masthead { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spark-mark .ray, .spark-mark .core, .reveal, .panel-frame { animation: none !important; }
+}

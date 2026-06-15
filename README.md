@@ -5,7 +5,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/alexandergg/foundry-genie-generative-ui?color=blue" alt="License: MIT" /></a>
   <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange" alt="Keep a Changelog" /></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff" /></a>
-  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs" alt="Next.js 15" /></a>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs" alt="Next.js 16" /></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" alt="Python 3.12" /></a>
 </p>
 
@@ -17,21 +17,37 @@ A professional demo repository for **Generative UI on Azure AI Foundry** with **
 
 The demo shows an Exposure Control Room experience where a user asks business questions, approves or revises governed data access, a Microsoft Foundry agent queries a Databricks Genie Space through MCP, and the web UI renders traceable answers as controlled React components: KPIs, tables, bar charts, line/area trends, donut charts, metric comparisons, provenance footers, and executive risk signals.
 
-## Generative UI approach
+## The Generative UI spectrum — three demos
 
-CopilotKit describes Generative UI as a spectrum from developer-controlled components to fully agent-generated interfaces. This demo intentionally uses **Controlled Generative UI**, the most predictable band of that spectrum.
+CopilotKit describes Generative UI as a spectrum from developer-controlled components to fully agent-generated interfaces. This repository ships **one runnable demo per band**, all on the same stack (LangGraph agent over the AG-UI protocol, CopilotKit v2 frontend, Azure AI Foundry models), so the only variable is who authors the UI:
 
-In Controlled Generative UI, developers ship a fixed set of pre-built components and register them with the agent. At runtime, the agent chooses which component to render and supplies typed data for that component, but it cannot invent arbitrary markup, layouts, or visual surfaces. In this repository, the registered components include KPI strips, chart cards, narrative cards, policy breach cards, follow-up questions, and insight tables.
+| Band | Demo | Frontend / agent | Ports | External dependencies |
+| --- | --- | --- | --- | --- |
+| **Controlled** | Risk & Exposure Control Room (this page) | `apps/controlled/web` + `apps/controlled/agent` | 3000 / 8123 | Foundry project + Databricks Genie |
+| **Declarative (A2UI)** | Risk reports from a custom component catalog — fixed + dynamic schemas | `apps/declarative/web` + `apps/declarative/agent` | 3001 / 8124 | Foundry model endpoint only |
+| **Open-Ended** | Sandboxed generated UI + Excalidraw via MCP Apps | `apps/open-ended/web` + `apps/open-ended/agent` | 3002 / 8125 | Foundry model endpoint (+ internet for MCP Apps) |
 
-That model fits this demo because risk and exposure analytics need governed data access, deterministic visual payloads, and repeatable executive-facing UI. The agent can still make the experience feel dynamic by selecting the right visual for each business question, while the frontend keeps control over rendering, styling, and validation.
+The flagship demo uses **Controlled Generative UI**, the most predictable band: developers ship a fixed set of pre-built components, the agent chooses which component to render and supplies typed data, and it cannot invent arbitrary markup. The agent also drives the app shell itself — spotlighting a visual or entering presentation mode — through the same controlled tool path. That model fits governed risk analytics: deterministic visual payloads, schema validation in the client, repeatable executive-facing UI.
 
-This is different from other bands in the CopilotKit Generative UI Spectrum:
+The two companion demos cover the rest of the spectrum and run standalone with nothing but a Foundry model endpoint:
 
-- **Declarative Generative UI:** the agent assembles a UI tree from a catalog of smaller building blocks. This demo does not currently expose a composable A2UI-style component catalog.
-- **MCP Apps:** a third-party app surface is embedded, typically in a sandboxed iframe. This demo uses MCP for Databricks Genie access, but the UI components are first-party React components, not embedded MCP applets.
-- **Fully Open Generative UI:** the agent generates custom HTML, SVG, or a remote UI surface at runtime. This demo avoids that mode to keep analytics output predictable and on-brand.
+- **Declarative (A2UI):** the app defines a custom component catalog ([A2UI](https://docs.copilotkit.ai/a2a/generative-ui/declarative-a2ui) — metrics with trends, Recharts bar/pie charts, dashboard cards, tables, badges) and the agent composes against it in both schema styles: **fixed** (pre-authored executive report / brief; deterministic, works with no model at all) and **dynamic** (the LLM assembles the layout itself, rendered progressively as it streams).
 
-See CopilotKit's [Generative UI Spectrum](https://www.copilotkit.ai/generative-ui-spectrum) for the taxonomy behind this design choice. The architecture is also available as an editable diagrams.net file: [docs/generative-ui-architecture.drawio](docs/generative-ui-architecture.drawio).
+  ```bash
+  cp apps/declarative/agent/.env.example apps/declarative/agent/.env  # set RISK_MODEL_ENDPOINT
+  npm run install:declarative-agent && npm run dev:declarative-agent  # :8124
+  npm run dev:declarative-web                                         # :3001
+  ```
+
+- **Open-Ended:** no components, no catalog. With `openGenerativeUI` the agent writes sandboxed HTML/CSS/JS rendered live as it streams, and through `mcpApps` it launches full applications (Excalidraw whiteboards) inside the chat. Run the same prompt twice and the variation is the point (and the governance caveat).
+
+  ```bash
+  cp apps/open-ended/agent/.env.example apps/open-ended/agent/.env       # set RISK_MODEL_ENDPOINT
+  npm run install:open-ended-agent && npm run dev:open-ended-agent       # :8125
+  npm run dev:open-ended-web                                       # :3002
+  ```
+
+See [docs/generative-ui-spectrum.md](docs/generative-ui-spectrum.md) for the band-by-band mechanics (AG-UI vs A2UI, key files, governance trade-offs) and [docs/session-guide.es.md](docs/session-guide.es.md) for a ready-to-present session script (Spanish). The taxonomy follows CopilotKit's [Generative UI Spectrum](https://www.copilotkit.ai/generative-ui-spectrum); the architecture is also available as an editable diagrams.net file: [docs/generative-ui-architecture.drawio](docs/generative-ui-architecture.drawio).
 
 ## Architecture
 
@@ -84,18 +100,38 @@ This separation keeps the UI orchestration and the governed analytics tool bound
 
 </details>
 
+## Where do I start?
+
+| I want to… | Go to |
+| --- | --- |
+| Run the three demos locally | [Quick start per band](#the-generative-ui-spectrum--three-demos) above, or each band's README under `apps/` |
+| Understand the three Generative UI bands | [docs/generative-ui-spectrum.md](docs/generative-ui-spectrum.md) |
+| Deploy the Azure foundation (Foundry + Genie) | [docs/azure-setup.md](docs/azure-setup.md) |
+| Deploy all three demos to Azure (webs + hosted agents) | [docs/deploying-the-spectrum.md](docs/deploying-the-spectrum.md) |
+| Present this as a technical session | [docs/session-guide.es.md](docs/session-guide.es.md) (Spanish, with prompts and fallbacks) |
+| Browse all documentation | [docs/README.md](docs/README.md) |
+
 ## Repository layout
 
 ```text
 apps/
-  web/                 # Next.js + CopilotKit + controlled Generative UI components
-  agent/               # AG-UI/LangGraph bridge plus Foundry Hosted Agent invocations entrypoint
+  controlled/          # Band 01 · Controlled — the flagship Genie demo (README inside)
+    web/               #   Next.js + CopilotKit + controlled Generative UI components (:3000)
+    agent/             #   AG-UI/LangGraph supervisor + Foundry Hosted Agent entrypoint (:8123)
+  declarative/         # Band 02 · Declarative — A2UI fixed + dynamic schemas (README inside)
+    web/               #   Custom component catalog (definitions + renderers) + chat (:3001)
+    agent/             #   Planner + ToolNode fixed layouts + dynamic compose node (:8124)
+  open-ended/          # Band 03 · Open-Ended — sandboxed UI + MCP Apps (README inside)
+    web/               #   openGenerativeUI + Excalidraw MCP server wiring (:3002)
+    agent/             #   One-node graph binding every injected open-ended tool (:8125)
 infra/                 # Azure Bicep for Foundry, Key Vault, ACR, monitoring, optional Databricks, and optional frontend App Service
 databricks/sql/        # Synthetic Risk Exposure demo dataset and business-facing view
 scripts/               # Azure, Databricks, Genie, Foundry, validation, and cost-control scripts
-docs/                  # Step-by-step setup, local runbook, demo script, and operations notes
+docs/                  # Documentation hub — see docs/README.md for the index
 .foundry/              # Local Foundry metadata template; real metadata is gitignored
 ```
+
+Every band folder pairs one web app with one agent, and every agent ships both entrypoints: `main.py` (local AG-UI bridge) and `hosted_main.py` + `Dockerfile` + `agent.yaml` (Foundry Hosted Agent, Invocations protocol — the same pattern as the deployed Genie agent; build images with `scripts/build-hosted-agent-image.sh <agent-dir>`).
 
 ## Getting started
 
@@ -109,7 +145,7 @@ This is a **live Azure demo**, not an offline mock. The frontend can run locally
    - **Developer path:** run the AG-UI/FastAPI bridge locally; it still calls the deployed Foundry prompt agent and Databricks Genie.
 
 3. **Run or deploy the frontend**
-   Follow [docs/local-development.md](docs/local-development.md) to configure `apps/web/.env.local`, authenticate with Azure CLI, and start the Next.js app. If you want the frontend hosted in Azure too, enable the optional App Service resource in `infra/main.demo.bicepparam` and follow [docs/azure-setup.md](docs/azure-setup.md#11-optional-deploy-the-nextjs-frontend-to-azure-app-service).
+   Follow [docs/local-development.md](docs/local-development.md) to configure `apps/controlled/web/.env.local`, authenticate with Azure CLI, and start the Next.js app. If you want the frontend hosted in Azure too, enable the optional App Service resource in `infra/main.demo.bicepparam` and follow [docs/azure-setup.md](docs/azure-setup.md#11-optional-deploy-the-nextjs-frontend-to-azure-app-service).
 
 4. **Run the live demo**
    Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates conversational memory, traces, and rich visual components.
@@ -120,10 +156,10 @@ After cloud setup is complete and you have a Foundry Hosted Agent Invocations en
 
 ```bash
 npm install
-cp apps/web/.env.example apps/web/.env.local
+cp apps/controlled/web/.env.example apps/controlled/web/.env.local
 ```
 
-Set these values in `apps/web/.env.local`:
+Set these values in `apps/controlled/web/.env.local`:
 
 ```bash
 AG_UI_AGENT_URL="https://<hosted-agent-invocations-endpoint>"
@@ -135,7 +171,7 @@ Then run:
 
 ```bash
 az login
-npm run dev:web
+npm run dev:controlled-web
 ```
 
 Open <http://localhost:3000>. For the local FastAPI bridge alternative, see [docs/local-development.md](docs/local-development.md#run-with-the-local-ag-ui-bridge).
@@ -146,7 +182,7 @@ Open <http://localhost:3000>. For the local FastAPI bridge alternative, see [doc
 npm run validate
 ```
 
-This runs Python Ruff formatting/lint checks, mypy, pytest, Python compilation, and the frontend lint/build pipeline. See [CONTRIBUTING.md](CONTRIBUTING.md) for pre-commit setup.
+This runs Python Ruff formatting/lint checks, mypy, pytest, and Python compilation for the three agents, plus the lint/test/build pipeline for the three frontends. Per-demo variants exist too (`validate:controlled-agent`, `validate:declarative-agent`, `validate:open-ended-agent`, `validate:controlled-web`, `validate:declarative-web`, `validate:open-ended-web`). See [CONTRIBUTING.md](CONTRIBUTING.md) for pre-commit setup.
 
 ## Cost control
 

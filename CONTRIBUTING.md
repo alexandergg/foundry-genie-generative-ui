@@ -5,8 +5,8 @@ Thanks for considering a contribution. This repository is a public demo of Gener
 ## Repository layout
 
 ```
-apps/agent     Python LangGraph agent, served as a Foundry hosted agent
-apps/web       Next.js 15 frontend, CopilotKit + AG-UI surface
+apps/controlled/agent     Python LangGraph agent, served as a Foundry hosted agent
+apps/controlled/web       Next.js 15 frontend, CopilotKit + AG-UI surface
 infra/         Bicep modules (foundry, identity, RBAC, monitoring, ACR, etc.)
 scripts/       Setup, validate, and deploy helpers
 docs/          Architecture, demo script, Azure setup, cost control
@@ -19,10 +19,10 @@ For agent-specific or web-specific conventions, see `.github/instructions/*.md` 
 
 ```bash
 npm install
-npm run install:agent
+npm run install:controlled-agent
 ```
 
-`install:agent` creates `apps/agent/.venv` with Python 3.12 and installs the editable agent package plus the `[dev]` extras (ruff, mypy, pytest, pre-commit).
+`install:controlled-agent` creates `apps/controlled/agent/.venv` with Python 3.12 and installs the editable agent package plus the `[dev]` extras (ruff, mypy, pytest, pre-commit).
 
 Then enable pre-commit:
 
@@ -47,7 +47,7 @@ This repo uses [Conventional Commits](https://www.conventionalcommits.org/). The
 Allowed types we have used in this repo:
 
 | Type | When to use |
-|------|-------------|
+| ---- | ----------- |
 | `feat` | New user-visible capability. |
 | `fix` | Bug fix in shipped behavior. |
 | `refactor` | Code restructuring with no functional change. |
@@ -75,8 +75,8 @@ Keep the subject under ~72 characters, present tense, no trailing period.
 
 ```bash
 npm run validate          # Agent + web. Run this before opening a PR.
-npm run validate:agent    # Ruff format check, ruff lint, mypy strict, pytest, py_compile.
-npm run validate:web      # ESLint + Vitest + next build.
+npm run validate:controlled-agent    # Ruff format check, ruff lint, mypy strict, pytest, py_compile.
+npm run validate:controlled-web      # ESLint + Vitest + next build.
 ```
 
 If you touch infrastructure, also run:
@@ -87,8 +87,8 @@ az bicep build --file infra/main.bicep
 
 ## Testing expectations
 
-- New agent code paths in `apps/agent/foundry_genie_generative_ui/` should ship with a `pytest` covering the happy path and at least one failure mode. See `apps/agent/tests/` for examples.
-- New pure-logic helpers in `apps/web/src/` should ship with a Vitest. Avoid UI snapshot tests; prefer asserting on shape and routing.
+- New agent code paths in `apps/controlled/agent/foundry_genie_generative_ui/` should ship with a `pytest` covering the happy path and at least one failure mode. See `apps/controlled/agent/tests/` for examples.
+- New pure-logic helpers in `apps/controlled/web/src/` should ship with a Vitest. Avoid UI snapshot tests; prefer asserting on shape and routing.
 - Live Azure / Databricks / Foundry mutation scripts are not covered by CI. If you change them, run them manually against a sandbox subscription and note the result in the PR.
 
 ## Safety

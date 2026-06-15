@@ -4,9 +4,9 @@ Root rules for AI agents and contributors. Read this before editing the reposito
 
 ## Project
 
-- Demo: Generative UI for risk and exposure analytics.
-- Frontend: `apps/web` uses Next.js, React, CopilotKit, AG-UI, and Recharts.
-- Agent: `apps/agent` uses FastAPI, LangGraph, Azure AI Foundry, and Databricks Genie MCP.
+- Demo: Generative UI for risk and exposure analytics, as a three-band spectrum (Controlled / Declarative / Open-Ended).
+- Frontends: `apps/{controlled,declarative,open-ended}/web` use Next.js, React, CopilotKit, AG-UI, and Recharts.
+- Agents: `apps/{controlled,declarative,open-ended}/agent` use FastAPI, LangGraph, and Azure AI Foundry (`main.py` local bridge / `hosted_main.py` Foundry Invocations, logic under `src/`). The controlled band also uses the Databricks Genie MCP.
 - Infrastructure: `infra` Bicep; Databricks SQL demo data in `databricks/sql`.
 - Scripts: `scripts` contains opt-in Azure/Databricks setup and cost-control commands.
 
@@ -20,17 +20,18 @@ Root rules for AI agents and contributors. Read this before editing the reposito
 
 ## Commands
 
-- Install frontend dependencies: `npm install`.
-- Install the Python agent and dev tools: `npm run install:agent`.
-- Run everything locally: `npm run validate`.
-- Agent-only validation: `npm run validate:agent`.
-- Web validation: `npm run validate:web`.
-- Local dev: `npm run dev:agent` and `npm run dev:web`.
+`<band>` is `controlled`, `declarative`, or `open-ended`.
+
+- Install web dependencies (all workspaces): `npm install`.
+- Install a band's Python agent + dev tools: `npm run install:<band>-agent`.
+- Validate everything (3 agents + 3 webs — the CI gate): `npm run validate`.
+- Validate one band: `npm run validate:<band>-agent` / `npm run validate:<band>-web`.
+- Local dev: `npm run dev:<band>-agent` (local AG-UI bridge) and `npm run dev:<band>-web`; append `:hosted` to run the Foundry Invocations entrypoint instead.
 
 ## Validation expectations
 
-- Python changes: run `npm run validate:agent`.
-- Frontend changes: run `npm run validate:web`.
+- Python changes: run `npm run validate:<band>-agent` for the band(s) you touched.
+- Frontend changes: run `npm run validate:<band>-web`.
 - Script/docs setup changes: run `git diff --check` and validate referenced script names.
 - Infrastructure changes: prefer `az deployment group what-if`; do not deploy without explicit user approval.
 

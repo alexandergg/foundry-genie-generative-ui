@@ -14,14 +14,26 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-        files: ^apps/agent/.*\.py$
+        files: ^apps/.*/agent/.*\.py$
       - id: ruff-format
-        files: ^apps/agent/.*\.py$
+        files: ^apps/.*/agent/.*\.py$
   - repo: local
     hooks:
-      - id: agent-tests
-        name: agent unit tests
-        entry: scripts/validate-agent.sh --quick
+      - id: agent-tests-controlled
+        name: controlled agent unit tests
+        entry: scripts/validate-agent.sh apps/controlled/agent --quick
         language: system
         pass_filenames: false
-        files: ^apps/agent/.*\.py$
+        files: ^apps/controlled/agent/.*\.py$
+      - id: agent-tests-declarative
+        name: declarative agent unit tests
+        entry: scripts/validate-agent.sh apps/declarative/agent --quick
+        language: system
+        pass_filenames: false
+        files: ^apps/declarative/agent/.*\.py$
+      - id: agent-tests-open-ended
+        name: open-ended agent unit tests
+        entry: scripts/validate-agent.sh apps/open-ended/agent --quick
+        language: system
+        pass_filenames: false
+        files: ^apps/open-ended/agent/.*\.py$
