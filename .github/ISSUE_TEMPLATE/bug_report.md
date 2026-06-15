@@ -11,8 +11,8 @@ labels: ["bug"]
 
 ## Affected area
 
-- [ ] `apps/agent` (Python / LangGraph / Foundry)
-- [ ] `apps/web` (Next.js / CopilotKit / AG-UI)
+- [ ] Agent (`apps/<band>/agent` — Python / LangGraph / Foundry)
+- [ ] Web (`apps/<band>/web` — Next.js / CopilotKit / AG-UI)
 - [ ] `infra/` (Bicep)
 - [ ] `scripts/` (setup, validate, deploy)
 - [ ] `docs/`

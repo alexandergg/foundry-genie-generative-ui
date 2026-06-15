@@ -11,9 +11,9 @@ Use this skill when preparing or reviewing changes.
 
 1. Identify touched surfaces: Python agent, frontend, scripts/docs, infrastructure, or Databricks SQL.
 2. Run the narrowest relevant validation first:
-   - Python agent: `npm run validate:agent`
-   - Frontend: `npm run validate:web`
-   - Full repository: `npm run validate`
+   - Python agent (one band): `npm run validate:<band>-agent` (`<band>` = controlled | declarative | open-ended)
+   - Frontend (one band): `npm run validate:<band>-web`
+   - Full repository (all bands): `npm run validate`
    - Docs/scripts only: `git diff --check`
 3. Do not run live Azure, Databricks, or Foundry commands unless the user explicitly asks and required credentials are available.
 4. If a validation command fails, inspect the failure before deciding whether code changes are needed.

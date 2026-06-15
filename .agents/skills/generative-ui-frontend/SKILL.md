@@ -1,11 +1,11 @@
 ---
 name: generative-ui-frontend
-description: Guidance for the Next.js generative UI frontend in apps/web. Use when changing React components, CopilotKit or AG-UI integration, Recharts visualizations, frontend API routes, styling, or TypeScript UI logic.
+description: Guidance for the Next.js generative UI frontends in apps/*/web. Use when changing React components, CopilotKit or AG-UI integration, Recharts visualizations, frontend API routes, styling, or TypeScript UI logic.
 ---
 
 # Generative UI frontend
 
-Use this skill for changes under `apps/web`.
+Use this skill for changes under `apps/*/web` (the controlled, declarative, and open-ended frontends).
 
 ## Frontend principles
 
@@ -25,5 +25,5 @@ Use this skill for changes under `apps/web`.
 
 ## Validation
 
-- Run `npm run validate:web` after frontend changes.
+- Run `npm run validate:<band>-web` after frontend changes (`<band>` = controlled | declarative | open-ended).
 - If validation is blocked, report the exact command and reason.

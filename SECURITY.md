@@ -32,5 +32,5 @@ Out of scope (please report upstream):
 
 - This demo is designed to be deployed into a sandbox Azure subscription. It is **not** hardened for production.
 - The provided Bicep grants the demo identity broad roles (`Cognitive Services User`, etc.). Audit and tighten before any production reuse.
-- Keep `.risk.env.local`, `apps/web/.env.local`, `.foundry/agent-metadata.yaml`, and any other local environment files out of version control. They are gitignored by default — do not unignore them.
+- Keep `.risk.env.local`, `apps/*/web/.env.local`, `apps/*/agent/.env`, `.foundry/agent-metadata.yaml`, and any other local environment files out of version control. They are gitignored by default — do not unignore them.
 - The hosted agent assumes Foundry-managed identity for ACR and downstream tools. If you fork into a different topology, re-validate the trust boundary.

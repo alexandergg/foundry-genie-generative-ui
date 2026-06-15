@@ -1,11 +1,11 @@
 ---
 name: python-agent
-description: Guidance for the FastAPI and LangGraph Python agent in apps/agent. Use when changing agent orchestration, Azure AI Foundry integration, Databricks Genie MCP handling, parsing, mapping, session logic, or Python tests.
+description: Guidance for the FastAPI and LangGraph Python agents in apps/*/agent. Use when changing agent orchestration, Azure AI Foundry integration, Databricks Genie MCP handling, parsing, mapping, session logic, or Python tests.
 ---
 
 # Python agent work
 
-Use this skill for changes under `apps/agent`.
+Use this skill for changes under `apps/*/agent` (the controlled, declarative, and open-ended agents).
 
 ## Agent principles
 
@@ -24,5 +24,5 @@ Use this skill for changes under `apps/agent`.
 
 ## Validation
 
-- Run `npm run validate:agent` after Python changes.
+- Run `npm run validate:<band>-agent` after Python changes (`<band>` = controlled | declarative | open-ended).
 - If validation is blocked, report the exact command and reason.

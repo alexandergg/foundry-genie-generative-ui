@@ -81,7 +81,7 @@ class FoundryAgentClient:
             from azure.identity import DefaultAzureCredential
             from langchain_azure_ai.agents import AgentServiceFactory
         except ImportError as exc:
-            raise RuntimeError("Azure Foundry LangGraph dependencies are missing. Run `pip install -e apps/agent`.") from exc
+            raise RuntimeError("Azure Foundry LangGraph dependencies are missing. Run `pip install -e apps/controlled/agent`.") from exc
 
         factory = AgentServiceFactory(project_endpoint=self.settings.project_endpoint, credential=DefaultAzureCredential())
         self._agent_node_cache = cast(

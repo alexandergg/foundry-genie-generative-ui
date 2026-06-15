@@ -19,8 +19,8 @@ labels: ["enhancement"]
 
 ## Scope
 
-- [ ] Agent (`apps/agent`)
-- [ ] Web (`apps/web`)
+- [ ] Agent (`apps/<band>/agent`)
+- [ ] Web (`apps/<band>/web`)
 - [ ] Infra (`infra/`)
 - [ ] Scripts / setup
 - [ ] Docs

@@ -33,7 +33,7 @@ SURFACE_EXECUTIVE = "risk-report-executive"
 SURFACE_BRIEF = "risk-report-brief"
 
 # Custom catalog component names this demo is allowed to use (must stay in
-# sync with apps/declarative-web/src/catalog/definitions.ts; tests assert the
+# sync with apps/declarative/web/src/catalog/definitions.ts; tests assert the
 # layouts never leave it).
 CATALOG_COMPONENTS: frozenset[str] = frozenset(
     {

@@ -2,7 +2,7 @@ node_modules/
 .next/
 .venv/
 .venv-foundry-genie/
-apps/agent/.venv/
-apps/agent/.venv-foundry-genie/
+apps/*/agent/.venv/
+apps/*/agent/.venv-foundry-genie/
 .azure/
 docs/superpowers/
