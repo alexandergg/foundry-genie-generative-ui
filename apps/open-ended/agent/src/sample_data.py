@@ -1,4 +1,4 @@
-"""Inline sample dataset for the open-ended A2UI demo.
+"""Inline sample dataset for the open-ended generative UI demo (sandboxed UI + MCP Apps).
 
 Same energy-portfolio risk numbers as the declarative demo, but here they are
 only *prompt grounding*: the LLM invents the component tree itself, and the
