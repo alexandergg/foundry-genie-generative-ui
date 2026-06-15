@@ -21,6 +21,7 @@ from langgraph.graph.message import add_messages
 from src.config import load_settings
 from src.dashboard_context import extract_dashboard_context
 from src.foundry_agent_client import CONVERSATION_ID_KEY, DashboardOpDecision, FoundryAgentClient, FoundryAgentResponse, RouteDecision
+from src.observability import build_trace_callbacks
 from src.ui_event_contract import UiEventKind, UiEventPhase, build_ui_event
 from src.visualization_mapper import build_dataset_calls
 
@@ -28,6 +29,8 @@ Route = Literal["direct", "dashboard_op", "risk_data"]
 GraphNode = Literal["direct_response", "dashboard_op", "run_risk"]
 
 APP_AGENT_NAME = "default"
+# gen_ai.agent.id stamped on emitted spans — match the deployed Foundry agent name.
+TRACE_AGENT_ID = "risk-exposure-ag-ui-hosted"
 APP_TITLE = "Risk Exposure Generative UI Agent"
 FOUNDRY_CONVERSATION_KEY = CONVERSATION_ID_KEY
 
@@ -320,6 +323,7 @@ def build_ag_ui_agent() -> LangGraphAGUIAgent:
         name=APP_AGENT_NAME,
         description=HOSTED_AGENT_PROMPT,
         graph=agent_graph,
+        config={"callbacks": build_trace_callbacks(TRACE_AGENT_ID)},
     )
 
 

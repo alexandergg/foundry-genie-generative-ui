@@ -25,9 +25,12 @@ from langgraph.graph.message import add_messages
 
 from .history import repair_orphan_tool_calls
 from .llm import get_chat_model
+from .observability import build_trace_callbacks
 from .sample_data import domain_preamble
 
 APP_AGENT_NAME = "default"
+# gen_ai.agent.id stamped on emitted spans — match the deployed Foundry agent name.
+TRACE_AGENT_ID = "risk-open-ended-ui-hosted"
 SANDBOXED_UI_TOOL_NAME = "generateSandboxedUi"
 
 AGENT_DESCRIPTION = """
@@ -133,4 +136,9 @@ agent_graph = build_agent_graph()
 
 
 def build_ag_ui_agent() -> LangGraphAGUIAgent:
-    return LangGraphAGUIAgent(name=APP_AGENT_NAME, description=AGENT_DESCRIPTION, graph=agent_graph)
+    return LangGraphAGUIAgent(
+        name=APP_AGENT_NAME,
+        description=AGENT_DESCRIPTION,
+        graph=agent_graph,
+        config={"callbacks": build_trace_callbacks(TRACE_AGENT_ID)},
+    )

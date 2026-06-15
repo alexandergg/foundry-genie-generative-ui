@@ -29,11 +29,14 @@ from langgraph.prebuilt import ToolNode
 
 from .history import last_user_message, repair_orphan_tool_calls
 from .llm import get_chat_model
+from .observability import build_trace_callbacks
 from .planner import canned_summary, plan_report
 from .report_catalog import RENDER_TOOL_NAME, build_report_operations
 from .sample_data import DEFAULT_QUARTER, QUARTERS, LayoutId, build_report_view, dataset_json
 
 APP_AGENT_NAME = "default"
+# gen_ai.agent.id stamped on emitted spans — match the deployed Foundry agent name.
+TRACE_AGENT_ID = "risk-declarative-a2ui-hosted"
 RENDER_A2UI_TOOL_NAME = "render_a2ui"
 
 AGENT_DESCRIPTION = """
@@ -193,4 +196,9 @@ agent_graph = build_agent_graph()
 
 
 def build_ag_ui_agent() -> LangGraphAGUIAgent:
-    return LangGraphAGUIAgent(name=APP_AGENT_NAME, description=AGENT_DESCRIPTION, graph=agent_graph)
+    return LangGraphAGUIAgent(
+        name=APP_AGENT_NAME,
+        description=AGENT_DESCRIPTION,
+        graph=agent_graph,
+        config={"callbacks": build_trace_callbacks(TRACE_AGENT_ID)},
+    )

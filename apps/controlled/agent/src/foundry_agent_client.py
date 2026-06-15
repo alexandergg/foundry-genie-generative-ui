@@ -89,7 +89,7 @@ class FoundryAgentClient:
             factory.get_agent_node(
                 name=self.settings.agent_name,
                 version=self._configured_agent_version(),
-                trace=False,
+                trace=True,
             ),
         )
         return self._agent_node_cache
