@@ -58,8 +58,8 @@ See [docs/generative-ui-spectrum.md](docs/generative-ui-spectrum.md) for the ban
 Shared prerequisites:
 
 - `npm install` once for the web workspaces
-- Node.js 22+ and Python 3.12 recommended for the bundled install scripts
-- Azure CLI login is only needed for Band 01 when the controlled web authenticates to a Hosted Agent with Azure identity
+- Node.js 22+ and Python 3.12 for the bundled install scripts, which invoke `python3.12`
+- Azure CLI login is needed for Band 01 when the controlled web authenticates to a Hosted Agent with Azure identity, and can also be needed for Bands 02/03 if you leave `RISK_MODEL_API_KEY` empty and rely on `DefaultAzureCredential`
 
 ### Band 01 · Controlled
 
