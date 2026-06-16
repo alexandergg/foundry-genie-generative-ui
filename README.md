@@ -15,7 +15,13 @@
 
 A professional demo repository for **Generative UI on Azure AI Foundry** with **Databricks Genie**, **CopilotKit**, and the **AG-UI protocol**.
 
-The demo shows an Exposure Control Room experience where a user asks business questions, approves or revises governed data access, a Microsoft Foundry agent queries a Databricks Genie Space through MCP, and the web UI renders traceable answers as controlled React components: KPIs, tables, bar charts, line/area trends, donut charts, metric comparisons, provenance footers, and executive risk signals.
+This repository demonstrates the **full Generative UI spectrum** through three runnable risk-and-exposure demos:
+
+- **Controlled:** a governed Exposure Control Room where the agent queries Databricks Genie through Microsoft Foundry and renders typed React components plus app-shell actions.
+- **Declarative (A2UI):** a custom component catalog where the agent composes fixed or dynamic schemas against bounded components.
+- **Open-Ended:** sandboxed generated UI and MCP Apps, including Excalidraw, where variation between runs is part of the demo.
+
+The controlled band remains the flagship cloud-backed scenario, but the repository itself is organized around **all three demos**.
 
 ## The Generative UI spectrum — three demos
 
@@ -33,23 +39,65 @@ The two companion demos cover the rest of the spectrum and run standalone with n
 
 - **Declarative (A2UI):** the app defines a custom component catalog ([A2UI](https://docs.copilotkit.ai/a2a/generative-ui/declarative-a2ui) — metrics with trends, Recharts bar/pie charts, dashboard cards, tables, badges) and the agent composes against it in both schema styles: **fixed** (pre-authored executive report / brief; deterministic, works with no model at all) and **dynamic** (the LLM assembles the layout itself, rendered progressively as it streams).
 
-  ```bash
-  cp apps/declarative/agent/.env.example apps/declarative/agent/.env  # set RISK_MODEL_ENDPOINT
-  npm run install:declarative-agent && npm run dev:declarative-agent  # :8124
-  npm run dev:declarative-web                                         # :3001
-  ```
-
 - **Open-Ended:** no components, no catalog. With `openGenerativeUI` the agent writes sandboxed HTML/CSS/JS rendered live as it streams, and through `mcpApps` it launches full applications (Excalidraw whiteboards) inside the chat. Run the same prompt twice and the variation is the point (and the governance caveat).
 
-  ```bash
-  cp apps/open-ended/agent/.env.example apps/open-ended/agent/.env       # set RISK_MODEL_ENDPOINT
-  npm run install:open-ended-agent && npm run dev:open-ended-agent       # :8125
-  npm run dev:open-ended-web                                       # :3002
-  ```
+For exact setup commands for every band, use [Quick start by band](#quick-start-by-band) below.
 
 See [docs/generative-ui-spectrum.md](docs/generative-ui-spectrum.md) for the band-by-band mechanics (AG-UI vs A2UI, key files, governance trade-offs) and [docs/session-guide.es.md](docs/session-guide.es.md) for a ready-to-present session script (Spanish). The taxonomy follows CopilotKit's [Generative UI Spectrum](https://www.copilotkit.ai/generative-ui-spectrum); the architecture is also available as an editable diagrams.net file: [docs/generative-ui-architecture.drawio](docs/generative-ui-architecture.drawio).
 
-## Architecture
+## Choose a demo
+
+| If you want to explore… | Start here | Why |
+| --- | --- | --- |
+| Governed analytics over live business data | [apps/controlled/README.md](apps/controlled/README.md) | Fixed React components, typed tool payloads, app-shell controls, Foundry + Databricks Genie |
+| A bounded component vocabulary with flexible layouts | [apps/declarative/README.md](apps/declarative/README.md) | A2UI fixed + dynamic schemas over a custom catalog, model endpoint only |
+| Maximum UI freedom or embedded apps | [apps/open-ended/README.md](apps/open-ended/README.md) | Sandboxed generated UI plus MCP Apps like Excalidraw, model endpoint only |
+
+## Quick start by band
+
+Shared prerequisites:
+
+- `npm install` once for the web workspaces
+- Node.js 22+ and Python 3.12 recommended for the bundled install scripts
+- Azure CLI login is only needed for Band 01 when the controlled web authenticates to a Hosted Agent with Azure identity
+
+### Band 01 · Controlled
+
+Needs a Foundry project, the deployed prompt agent, and Databricks Genie. Follow [docs/azure-setup.md](docs/azure-setup.md) for the cloud foundation and [docs/local-development.md](docs/local-development.md) for the web env values and the choice between the local AG-UI bridge and the Hosted Agent path.
+
+```bash
+npm run install:controlled-agent
+npm run dev:controlled-agent
+npm run dev:controlled-web
+```
+
+### Band 02 · Declarative
+
+Needs `RISK_MODEL_ENDPOINT` (and deployment name, if applicable) in `apps/declarative/agent/.env`.
+
+```bash
+cp apps/declarative/agent/.env.example apps/declarative/agent/.env
+npm run install:declarative-agent
+npm run dev:declarative-agent
+npm run dev:declarative-web
+```
+
+### Band 03 · Open-Ended
+
+Needs `RISK_MODEL_ENDPOINT` (and deployment name, if applicable) in `apps/open-ended/agent/.env`, plus internet access to `mcp.excalidraw.com` for the MCP Apps beat.
+
+```bash
+cp apps/open-ended/agent/.env.example apps/open-ended/agent/.env
+npm run install:open-ended-agent
+npm run dev:open-ended-agent
+npm run dev:open-ended-web
+```
+
+All three agents also ship local Hosted-Agent-parity entrypoints: `npm run dev:controlled-agent:hosted`, `npm run dev:declarative-agent:hosted`, and `npm run dev:open-ended-agent:hosted`.
+
+## Band 01 architecture — Controlled Genie demo
+
+The next sections zoom in on the flagship controlled demo because it is the band that exercises the full Azure + Databricks path. For the declarative and open-ended runtime mechanics, start with the band READMEs under `apps/` and [docs/generative-ui-spectrum.md](docs/generative-ui-spectrum.md).
 
 <p align="center">
   <img src="docs/assets/azure-architecture-overview.png" alt="High-level Azure architecture for the Risk & Exposure Intelligence Copilot" width="100%">
@@ -72,9 +120,9 @@ Browser
 
 See [docs/architecture.md](docs/architecture.md) for details.
 
-## Microsoft Foundry implementation
+## Band 01 Foundry implementation
 
-The deployed Foundry project uses a two-agent design:
+Declarative and Open-Ended can run against a model endpoint only. The controlled band adds a two-agent Foundry design so the AG-UI runtime and the governed Databricks Genie boundary stay explicit:
 
 | Agent | Type | Responsibility |
 | --- | --- | --- |
@@ -104,7 +152,7 @@ This separation keeps the UI orchestration and the governed analytics tool bound
 
 | I want to… | Go to |
 | --- | --- |
-| Run the three demos locally | [Quick start per band](#the-generative-ui-spectrum--three-demos) above, or each band's README under `apps/` |
+| Run one of the demos locally | [Quick start by band](#quick-start-by-band) above, or each band's README under `apps/` |
 | Understand the three Generative UI bands | [docs/generative-ui-spectrum.md](docs/generative-ui-spectrum.md) |
 | Deploy the Azure foundation (Foundry + Genie) | [docs/azure-setup.md](docs/azure-setup.md) |
 | Deploy all three demos to Azure (webs + hosted agents) | [docs/deploying-the-spectrum.md](docs/deploying-the-spectrum.md) |
@@ -133,9 +181,9 @@ docs/                  # Documentation hub — see docs/README.md for the index
 
 Every band folder pairs one web app with one agent, and every agent ships both entrypoints: `main.py` (local AG-UI bridge) and `hosted_main.py` + `Dockerfile` + `agent.yaml` (Foundry Hosted Agent, Invocations protocol — the same pattern as the deployed Genie agent; build images with `scripts/build-hosted-agent-image.sh <agent-dir>`).
 
-## Getting started
+## Band 01 cloud setup path
 
-This is a **live Azure demo**, not an offline mock. The frontend can run locally, but useful answers require a deployed Microsoft Foundry prompt agent connected to Databricks Genie. You can then choose whether the custom AG-UI/LangGraph runtime runs locally or as a Foundry Hosted Agent.
+This is the flagship **live Azure** path for the controlled demo, not an offline mock. The frontend can run locally, but useful governed answers require a deployed Microsoft Foundry prompt agent connected to Databricks Genie. You can then choose whether the custom AG-UI/LangGraph runtime runs locally or as a Foundry Hosted Agent.
 
 1. **Deploy the cloud foundation**
    Follow [docs/azure-setup.md](docs/azure-setup.md) through validation step 9. This creates the Microsoft Foundry project/model, Key Vault, ACR, Application Insights tracing connections, and the Foundry prompt agent. Configure `infra/main.demo.bicepparam` to reuse your existing Databricks Genie workspace or to deploy a new one.
@@ -150,9 +198,9 @@ This is a **live Azure demo**, not an offline mock. The frontend can run locally
 4. **Run the live demo**
    Use [docs/demo-script.md](docs/demo-script.md) for a guided session that validates conversational memory, traces, and rich visual components.
 
-## Quick local frontend run
+## Band 01 quick local frontend run
 
-After cloud setup is complete and you have a Foundry Hosted Agent Invocations endpoint:
+After Band 01 cloud setup is complete and you have a Foundry Hosted Agent Invocations endpoint:
 
 ```bash
 npm install
@@ -184,9 +232,9 @@ npm run validate
 
 This runs Python Ruff formatting/lint checks, mypy, pytest, and Python compilation for the three agents, plus the lint/test/build pipeline for the three frontends. Per-demo variants exist too (`validate:controlled-agent`, `validate:declarative-agent`, `validate:open-ended-agent`, `validate:controlled-web`, `validate:declarative-web`, `validate:open-ended-web`). See [CONTRIBUTING.md](CONTRIBUTING.md) for pre-commit setup.
 
-## Cost control
+## Band 01 cost control
 
-The demo is intentionally live: there is no mock runtime. Databricks SQL Warehouse usage can incur cost. Stop compute after each session:
+The controlled demo is intentionally live: there is no mock Databricks path for governed analytics, and Databricks SQL Warehouse usage can incur cost. The declarative and open-ended bands do not use Databricks compute. Stop compute after each controlled session:
 
 ```bash
 source .risk.env.local
@@ -204,5 +252,7 @@ See [docs/cost-control.md](docs/cost-control.md).
 - Foundry hosted agents quickstart: <https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent>
 - Foundry hosted agent runtime components: <https://learn.microsoft.com/azure/ai-foundry/agents/concepts/runtime-components?view=foundry>
 - Foundry tracing with Application Insights: <https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup>
+- CopilotKit Generative UI Spectrum: <https://www.copilotkit.ai/generative-ui-spectrum>
+- Declarative A2UI: <https://docs.copilotkit.ai/a2a/generative-ui/declarative-a2ui>
 - CopilotKit: <https://docs.copilotkit.ai/>
 - AG-UI protocol: <https://docs.ag-ui.com/>
